@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import ru.maplyb.unitmanagerlib.gui.impl.MainScreen
 import ru.maplyb.unitmanagerlib.parser.impl.parseFile
 import java.io.File
 import java.io.InputStream
@@ -56,55 +57,21 @@ class MainActivity : AppCompatActivity() {
 
 @Composable
 fun MyTable(file: InputStream) {
-    val headersData = parseFile(file)
+    val parsingResult = parseFile(file)
     Column {
-        TableHeader(headersData)
+        TableHeader(parsingResult.headers, parsingResult.values)
     }
 }
 
 @Composable
-fun TableHeader(headersData: Map<String, List<String>>) {
+fun TableHeader(headersData: Map<String, List<String>>, values: Map<String, List<List<String>>>) {
     val scrollState = rememberScrollState()
-    var rowWidth by remember { mutableStateOf(0) }
-    Row(
-        modifier = Modifier
-            .horizontalScroll(scrollState)
-            .fillMaxWidth()
-    ) {
-        headersData.forEach { (mainHeader, subHeaders) ->
-            Column(
-                modifier = Modifier.wrapContentWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = mainHeader,
-                    modifier = Modifier
-                        .width(with(LocalDensity.current) { rowWidth.toDp() })
-                        .border(1.dp, Color.Black)
-                        .padding(4.dp),
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold
-                )
-                if (subHeaders.isNotEmpty()) {
-                    Row(
-                        Modifier.onGloballyPositioned {
-                            rowWidth = it.size.width
-                        }
-                    ) {
-                        subHeaders.forEach { sub ->
-                            Text(
-                                text = sub,
-                                modifier = Modifier
-                                    .border(1.dp, Color.Black)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
+    val currentValues = values["Управление взвода"]
+    MainScreen(
+        headersData = headersData,
+        values = values
+    )
+
 }
 
 @Composable

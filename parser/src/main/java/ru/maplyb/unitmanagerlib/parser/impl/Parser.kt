@@ -4,7 +4,11 @@ import java.awt.AWTEventMulticaster.add
 import java.io.File
 import java.io.InputStream
 
-fun parseFile(inputStream: InputStream): Map<String, List<String>> {
+data class FileParsingResult(
+    val headers: Map<String, List<String>>,
+    val values: Map<String, List<List<String>>>
+)
+fun parseFile(inputStream: InputStream): FileParsingResult {
     val lines = buildList {
         inputStream.bufferedReader().use {
             addAll(it.readLines())
@@ -16,7 +20,7 @@ fun parseFile(inputStream: InputStream): Map<String, List<String>> {
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
     println("headers: $subHeaders")
     println("values: $values")
-    return subHeaders
+    return FileParsingResult(subHeaders, values)
 }
 fun parseFile(file: File): Map<String, List<String>> {
     val lines = file.readLines()
