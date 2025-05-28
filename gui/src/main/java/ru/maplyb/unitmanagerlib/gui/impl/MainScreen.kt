@@ -1,11 +1,15 @@
 package ru.maplyb.unitmanagerlib.gui.impl
 
+import android.widget.Space
 import androidx.collection.mutableIntListOf
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -105,11 +109,8 @@ fun AppNavHost(
     ) {
         destinations.forEach { destination ->
             composable(destination) {
-                when (destination) {
-                    else -> {
-                        Headers(headers, values)
-                    }
-                }
+                val currentValues = values[destination]
+                Headers(headers, currentValues!!)
             }
         }
     }
@@ -130,28 +131,29 @@ private fun HeadersPreview() {
         "Группа крови" to emptyList<String>(),
         "Позиция" to emptyList<String>(),
     )
-    val values: Map<String, List<List<String>>> = mapOf(
-        "Управление взвода" to listOf(
-            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
-            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
-            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда")
+    val values: List<List<String>> = listOf(
+            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"
+            ),
+            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"
+            ),
+            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"
+            )
         )
-    )
+
     Headers(
         headersData = headersData,
         values = values
-        )
+    )
 }
 
 @Composable
 private fun Headers(
     headersData: Map<String, List<String>>,
-    values: Map<String, List<List<String>>>
+    values: List<List<String>>
 ) {
     val scrollState = rememberScrollState()
     var rowWidth by remember { mutableStateOf(0) }
     var currentHeaderIndex by remember { mutableIntStateOf(0) }
-    val currentValues = values["Управление взвода"]
     var currentValuesIndex by remember { mutableIntStateOf(0) }
     Row(
         modifier = Modifier
@@ -161,15 +163,14 @@ private fun Headers(
         headersData.forEach { (mainHeader, subHeaders) ->
             Column(
                 modifier = Modifier
-                    .width(170.dp)
+                    .width(if (subHeaders.isNotEmpty()) 340.dp else 170.dp)
                     .border(1.dp, Color.Black),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = mainHeader,
                     modifier = Modifier
-                        .padding(4.dp)
-                        ,
+                        .padding(4.dp),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
                 )
@@ -180,20 +181,24 @@ private fun Headers(
                         }
                     ) {
                         subHeaders.forEachIndexed { index, sub ->
-                            Column {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
                                 Text(
                                     text = sub,
                                     modifier = Modifier
-                                        .wrapContentHeight()
-                                        .weight(1f)
+                                        .height(24.dp)
+                                        .fillMaxWidth()
                                         .border(1.dp, Color.Black)
                                         .padding(horizontal = 8.dp, vertical = 4.dp),
                                     textAlign = TextAlign.Center
                                 )
-                                currentValues?.getValuesByIndex(currentValuesIndex)?.forEach {
+                                values.getValuesByIndex(currentValuesIndex).forEach {
                                     Text(
                                         text = it,
                                         modifier = Modifier
+                                            .wrapContentHeight()
+                                            .fillMaxWidth()
                                             .border(1.dp, Color.Black)
                                             .padding(horizontal = 8.dp, vertical = 4.dp),
                                         textAlign = TextAlign.Center
@@ -204,15 +209,16 @@ private fun Headers(
                         }
                     }
                 } else {
+                    Spacer(Modifier.height(24.dp))
                     Column {
-                        currentValues?.getValuesByIndex(currentValuesIndex)?.forEach {
+                        values.getValuesByIndex(currentValuesIndex).forEach {
                             Text(
                                 text = it,
                                 modifier = Modifier
                                     .wrapContentHeight()
                                     .fillMaxWidth()
                                     .border(1.dp, Color.Black)
-                                    .padding(horizontal = 8.dp),
+                                    .padding(horizontal = 8.dp, vertical = 4.dp),
                                 textAlign = TextAlign.Center
                             )
                         }
