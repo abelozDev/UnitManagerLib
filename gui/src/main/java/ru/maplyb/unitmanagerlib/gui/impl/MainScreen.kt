@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -151,13 +152,15 @@ private fun Headers(
     headersData: Map<String, List<String>>,
     values: List<List<String>>
 ) {
-    val scrollState = rememberScrollState()
+    val horizontalScrollState = rememberScrollState()
+    val verticalScrollState = rememberScrollState()
     var rowWidth by remember { mutableStateOf(0) }
     var currentHeaderIndex by remember { mutableIntStateOf(0) }
     var currentValuesIndex by remember { mutableIntStateOf(0) }
     Row(
         modifier = Modifier
-            .horizontalScroll(scrollState)
+            .horizontalScroll(horizontalScrollState)
+            .verticalScroll(verticalScrollState)
             .fillMaxWidth()
     ) {
         headersData.forEach { (mainHeader, subHeaders) ->
