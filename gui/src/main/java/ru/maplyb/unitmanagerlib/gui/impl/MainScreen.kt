@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -114,6 +115,34 @@ fun AppNavHost(
     }
 }
 
+@Preview(widthDp = 2000, showBackground = true)
+@Composable
+private fun HeadersPreview() {
+    val headersData = mapOf(
+        "№п/п" to emptyList<String>(),
+        "№" to emptyList<String>(),
+        "Позывной" to emptyList<String>(),
+        "№ жетона" to emptyList<String>(),
+        "Должность" to emptyList<String>(),
+        "Группа" to emptyList<String>(),
+        "Вооружение" to listOf("тип", "№", "тип", "№"),
+        "Средства связи" to listOf("рст", "телефон"),
+        "Группа крови" to emptyList<String>(),
+        "Позиция" to emptyList<String>(),
+    )
+    val values: Map<String, List<List<String>>> = mapOf(
+        "Управление взвода" to listOf(
+            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
+            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
+            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда")
+        )
+    )
+    Headers(
+        headersData = headersData,
+        values = values
+        )
+}
+
 @Composable
 private fun Headers(
     headersData: Map<String, List<String>>,
@@ -139,7 +168,8 @@ private fun Headers(
                 Text(
                     text = mainHeader,
                     modifier = Modifier
-                        .padding(4.dp),
+                        .padding(4.dp)
+                        ,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
                 )
@@ -164,8 +194,6 @@ private fun Headers(
                                     Text(
                                         text = it,
                                         modifier = Modifier
-                                            .wrapContentHeight()
-                                            .weight(1f)
                                             .border(1.dp, Color.Black)
                                             .padding(horizontal = 8.dp, vertical = 4.dp),
                                         textAlign = TextAlign.Center
@@ -182,9 +210,9 @@ private fun Headers(
                                 text = it,
                                 modifier = Modifier
                                     .wrapContentHeight()
-                                    .weight(1f)
+                                    .fillMaxWidth()
                                     .border(1.dp, Color.Black)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    .padding(horizontal = 8.dp),
                                 textAlign = TextAlign.Center
                             )
                         }

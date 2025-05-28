@@ -47,4 +47,6 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.navigation.compose)
     implementation(libs.androidx.material3)
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-tooling")
 }
