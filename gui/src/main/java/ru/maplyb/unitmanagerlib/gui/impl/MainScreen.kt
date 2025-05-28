@@ -4,6 +4,7 @@ import android.widget.Space
 import androidx.collection.mutableIntListOf
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +35,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -120,26 +123,12 @@ fun AppNavHost(
 @Preview(widthDp = 2000, showBackground = true)
 @Composable
 private fun HeadersPreview() {
-    val headersData = mapOf(
-        "№п/п" to emptyList<String>(),
-        "№" to emptyList<String>(),
-        "Позывной" to emptyList<String>(),
-        "№ жетона" to emptyList<String>(),
-        "Должность" to emptyList<String>(),
-        "Группа" to emptyList<String>(),
-        "Вооружение" to listOf("тип", "№", "тип", "№"),
-        "Средства связи" to listOf("рст", "телефон"),
-        "Группа крови" to emptyList<String>(),
-        "Позиция" to emptyList<String>(),
-    )
+    val headersData = mapOf("№п/п" to emptyList<String>(), "№" to emptyList<String>(), "Позывной" to emptyList<String>(), "№ жетона" to emptyList<String>(), "Должность" to emptyList<String>(), "Группа" to emptyList<String>(), "Вооружение" to listOf("тип", "№", "тип", "№"), "Средства связи" to listOf("рст", "телефон"), "Группа крови" to emptyList<String>(), "Позиция" to emptyList<String>(),)
     val values: List<List<String>> = listOf(
-            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"
-            ),
-            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"
-            ),
-            listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"
-            )
-        )
+        listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
+        listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
+        listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда")
+    )
 
     Headers(
         headersData = headersData,
@@ -155,7 +144,6 @@ private fun Headers(
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
     var rowWidth by remember { mutableStateOf(0) }
-    var currentHeaderIndex by remember { mutableIntStateOf(0) }
     var currentValuesIndex by remember { mutableIntStateOf(0) }
     Row(
         modifier = Modifier
@@ -164,72 +152,78 @@ private fun Headers(
             .fillMaxWidth()
     ) {
         headersData.forEach { (mainHeader, subHeaders) ->
+            val currentValues = values.getValuesByIndex(currentValuesIndex)
+            val maxText = (currentValues + listOf(mainHeader)).maxByOrNull { it.length } ?: ""
+            val textMeasurer = rememberTextMeasurer()
+            val textLayoutResult = textMeasurer.measure(AnnotatedString(maxText))
+            val maxWidth = with(LocalDensity.current) {
+                textLayoutResult.size.width.toDp()
+            }
             Column(
-                modifier = Modifier
-                    .width(if (subHeaders.isNotEmpty()) 340.dp else 170.dp)
-                    .border(1.dp, Color.Black),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = mainHeader,
                     modifier = Modifier
-                        .padding(4.dp),
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold
-                )
-                if (subHeaders.isNotEmpty()) {
-                    Row(
-                        Modifier.onGloballyPositioned {
-                            rowWidth = it.size.width
-                        }
-                    ) {
-                        subHeaders.forEachIndexed { index, sub ->
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = sub,
-                                    modifier = Modifier
-                                        .height(24.dp)
-                                        .fillMaxWidth()
-                                        .border(1.dp, Color.Black)
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    textAlign = TextAlign.Center
-                                )
-                                values.getValuesByIndex(currentValuesIndex).forEach {
+                        .width(maxWidth + 16.dp)
+                        .border(1.dp, Color.Black),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = mainHeader,
+                        modifier = Modifier
+                            .padding(4.dp),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (subHeaders.isNotEmpty()) {
+                        Row(
+                            Modifier.onGloballyPositioned {
+                                rowWidth = it.size.width
+                            }
+                        ) {
+                            subHeaders.forEachIndexed { index, sub ->
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
                                     Text(
-                                        text = it,
+                                        text = sub,
                                         modifier = Modifier
-                                            .wrapContentHeight()
+                                            .height(24.dp)
                                             .fillMaxWidth()
                                             .border(1.dp, Color.Black)
                                             .padding(horizontal = 8.dp, vertical = 4.dp),
                                         textAlign = TextAlign.Center
                                     )
+                                    values.getValuesByIndex(currentValuesIndex).forEach {
+                                        Text(
+                                            text = it,
+                                            modifier = Modifier
+                                                .wrapContentHeight()
+                                                .fillMaxWidth()
+                                                .border(1.dp, Color.Black)
+                                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
                                 }
+                                currentValuesIndex++
                             }
-                            currentValuesIndex++
                         }
-                    }
-                } else {
-                    Spacer(Modifier.height(24.dp))
-                    Column {
-                        values.getValuesByIndex(currentValuesIndex).forEach {
-                            Text(
-                                text = it,
-                                modifier = Modifier
-                                    .wrapContentHeight()
-                                    .fillMaxWidth()
-                                    .border(1.dp, Color.Black)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                textAlign = TextAlign.Center
-                            )
+                    } else {
+                        Spacer(Modifier.height(24.dp))
+                        Column {
+                            values.getValuesByIndex(currentValuesIndex).forEach {
+                                Text(
+                                    text = it,
+                                    modifier = Modifier
+                                        .wrapContentHeight()
+                                        .fillMaxWidth()
+                                        .border(1.dp, Color.Black)
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                            }
                         }
+                        currentValuesIndex++
                     }
-                    currentValuesIndex++
                 }
-            }
-            currentHeaderIndex++
         }
     }
 }
