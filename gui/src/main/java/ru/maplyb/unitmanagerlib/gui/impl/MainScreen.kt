@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,11 +44,21 @@ fun MainScreen(headersData: Map<String, List<String>>, values: Map<String, List<
 }
 
 @Composable
-fun NavigationTabExample(headersData: Map<String, List<String>>, values: Map<String, List<List<String>>>, modifier: Modifier = Modifier) {
+fun NavigationTabExample(
+    headersData: Map<String, List<String>>,
+    values: Map<String, List<List<String>>>,
+    modifier: Modifier = Modifier
+) {
     val navController = rememberNavController()
     val destinations = values.keys.toList()
     val startDestination = destinations.first()
-    var selectedDestination by rememberSaveable { mutableIntStateOf(destinations.indexOf(startDestination)) }
+    var selectedDestination by rememberSaveable {
+        mutableIntStateOf(
+            destinations.indexOf(
+                startDestination
+            )
+        )
+    }
     Scaffold(modifier = modifier) { contentPadding ->
         Column {
             ScrollableTabRow(
@@ -73,7 +84,7 @@ fun NavigationTabExample(headersData: Map<String, List<String>>, values: Map<Str
                     )
                 }
             }
-            AppNavHost(navController, startDestination, destinations, headersData)
+            AppNavHost(navController, startDestination, destinations, headersData, values)
         }
     }
 }
@@ -84,6 +95,7 @@ fun AppNavHost(
     startDestination: String,
     destinations: List<String>,
     headers: Map<String, List<String>>,
+    values: Map<String, List<List<String>>>,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -94,7 +106,7 @@ fun AppNavHost(
             composable(destination) {
                 when (destination) {
                     else -> {
-                        Headers(headers)
+                        Headers(headers, values)
                     }
                 }
             }
@@ -103,9 +115,15 @@ fun AppNavHost(
 }
 
 @Composable
-private fun Headers(headersData: Map<String, List<String>>) {
+private fun Headers(
+    headersData: Map<String, List<String>>,
+    values: Map<String, List<List<String>>>
+) {
     val scrollState = rememberScrollState()
     var rowWidth by remember { mutableStateOf(0) }
+    var currentHeaderIndex by remember { mutableIntStateOf(0) }
+    val currentValues = values["Управление взвода"]
+    var currentValuesIndex by remember { mutableIntStateOf(0) }
     Row(
         modifier = Modifier
             .horizontalScroll(scrollState)
@@ -113,14 +131,14 @@ private fun Headers(headersData: Map<String, List<String>>) {
     ) {
         headersData.forEach { (mainHeader, subHeaders) ->
             Column(
-                modifier = Modifier.wrapContentWidth(),
+                modifier = Modifier
+                    .width(170.dp)
+                    .border(1.dp, Color.Black),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = mainHeader,
                     modifier = Modifier
-                        .width(with(LocalDensity.current) { rowWidth.toDp() })
-                        .border(1.dp, Color.Black)
                         .padding(4.dp),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold
@@ -131,18 +149,54 @@ private fun Headers(headersData: Map<String, List<String>>) {
                             rowWidth = it.size.width
                         }
                     ) {
-                        subHeaders.forEach { sub ->
+                        subHeaders.forEachIndexed { index, sub ->
+                            Column {
+                                Text(
+                                    text = sub,
+                                    modifier = Modifier
+                                        .wrapContentHeight()
+                                        .weight(1f)
+                                        .border(1.dp, Color.Black)
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    textAlign = TextAlign.Center
+                                )
+                                currentValues?.getValuesByIndex(currentValuesIndex)?.forEach {
+                                    Text(
+                                        text = it,
+                                        modifier = Modifier
+                                            .wrapContentHeight()
+                                            .weight(1f)
+                                            .border(1.dp, Color.Black)
+                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                            currentValuesIndex++
+                        }
+                    }
+                } else {
+                    Column {
+                        currentValues?.getValuesByIndex(currentValuesIndex)?.forEach {
                             Text(
-                                text = sub,
+                                text = it,
                                 modifier = Modifier
+                                    .wrapContentHeight()
+                                    .weight(1f)
                                     .border(1.dp, Color.Black)
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                                 textAlign = TextAlign.Center
                             )
                         }
                     }
+                    currentValuesIndex++
                 }
             }
+            currentHeaderIndex++
         }
     }
+}
+
+fun List<List<String>>.getValuesByIndex(index: Int): List<String> {
+    return map { it.getOrNull(index) ?: "" }
 }
