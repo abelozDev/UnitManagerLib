@@ -36,12 +36,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -125,7 +128,7 @@ fun AppNavHost(
 private fun HeadersPreview() {
     val headersData = mapOf("№п/п" to emptyList<String>(), "№" to emptyList<String>(), "Позывной" to emptyList<String>(), "№ жетона" to emptyList<String>(), "Должность" to emptyList<String>(), "Группа" to emptyList<String>(), "Вооружение" to listOf("тип", "№", "тип", "№"), "Средства связи" to listOf("рст", "телефон"), "Группа крови" to emptyList<String>(), "Позиция" to emptyList<String>(),)
     val values: List<List<String>> = listOf(
-        listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
+        listOf("1", "1", "Ленон", "В-77777123123123123123", "КВ", "Управление", "12345678901234567890", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
         listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
         listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда")
     )
@@ -143,63 +146,83 @@ private fun Headers(
 ) {
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
-    var rowWidth by remember { mutableStateOf(0) }
     var currentValuesIndex by remember { mutableIntStateOf(0) }
+    val textMeasurer = rememberTextMeasurer()
     Row(
         modifier = Modifier
             .horizontalScroll(horizontalScrollState)
             .verticalScroll(verticalScrollState)
             .fillMaxWidth()
     ) {
+        currentValuesIndex = 0
         headersData.forEach { (mainHeader, subHeaders) ->
-            val currentValues = values.getValuesByIndex(currentValuesIndex)
-            val maxText = (currentValues + listOf(mainHeader)).maxByOrNull { it.length } ?: ""
-            val textMeasurer = rememberTextMeasurer()
-            val textLayoutResult = textMeasurer.measure(AnnotatedString(maxText))
+            val maxTextSizeByAllSubheaders = mutableListOf<String>()
+            for (i in currentValuesIndex..currentValuesIndex+subHeaders.lastIndex+1) {
+                maxTextSizeByAllSubheaders.add(values.getValuesByIndex(i).maxByOrNull { it.length } ?: "")
+            }
+            val maxText = listOf(maxTextSizeByAllSubheaders.joinToString(), mainHeader).maxBy { it.length }
+            println("maxTextSizeByAllSubheaders = ${maxTextSizeByAllSubheaders.joinToString()}")
+            val textLayoutResult = textMeasurer.measure(
+                text = AnnotatedString(maxText),
+                style = textStyle,
+                constraints = Constraints() // без ограничений
+            )
             val maxWidth = with(LocalDensity.current) {
                 textLayoutResult.size.width.toDp()
             }
             Column(
                     modifier = Modifier
-                        .width(maxWidth + 16.dp)
+                        .width(maxWidth + (32 * (subHeaders.size + 1)).dp)
                         .border(1.dp, Color.Black),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = mainHeader,
+                        style = textStyle,
                         modifier = Modifier
                             .padding(4.dp),
-                        textAlign = TextAlign.Center,
+                        maxLines = 1,
                         fontWeight = FontWeight.Bold
                     )
                     if (subHeaders.isNotEmpty()) {
-                        Row(
-                            Modifier.onGloballyPositioned {
-                                rowWidth = it.size.width
+                        val columnWidths = remember {
+                            subHeaders.mapIndexed { index, sub ->
+                                val valuesAtIndex = values.getValuesByIndex(currentValuesIndex + index)
+                                val allText = listOf(sub, *valuesAtIndex.toTypedArray())
+                                val maxText = allText.maxByOrNull { it.length } ?: ""
+                                val measured = textMeasurer.measure(AnnotatedString(maxText))
+                                measured.size.width
                             }
-                        ) {
+                        }
+                        val totalWidth = columnWidths.sum()
+                        Row {
                             subHeaders.forEachIndexed { index, sub ->
+                                val valuesAtIndex = values.getValuesByIndex(currentValuesIndex)
+                                val weight = columnWidths[index].toFloat() / totalWidth.toFloat()
+
                                 Column(
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(weight)
                                 ) {
                                     Text(
                                         text = sub,
+                                        maxLines = 1,
+                                        style = textStyle,
                                         modifier = Modifier
                                             .height(24.dp)
                                             .fillMaxWidth()
                                             .border(1.dp, Color.Black)
                                             .padding(horizontal = 8.dp, vertical = 4.dp),
-                                        textAlign = TextAlign.Center
                                     )
-                                    values.getValuesByIndex(currentValuesIndex).forEach {
+                                    valuesAtIndex.forEach {
                                         Text(
                                             text = it,
+                                            style = textStyle,
+                                            maxLines = 1,
                                             modifier = Modifier
                                                 .wrapContentHeight()
                                                 .fillMaxWidth()
                                                 .border(1.dp, Color.Black)
                                                 .padding(horizontal = 8.dp, vertical = 4.dp),
-                                            textAlign = TextAlign.Center
                                         )
                                     }
                                 }
@@ -212,12 +235,13 @@ private fun Headers(
                             values.getValuesByIndex(currentValuesIndex).forEach {
                                 Text(
                                     text = it,
+                                    maxLines = 1,
+                                    style = textStyle,
                                     modifier = Modifier
                                         .wrapContentHeight()
                                         .fillMaxWidth()
                                         .border(1.dp, Color.Black)
                                         .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
@@ -231,3 +255,8 @@ private fun Headers(
 fun List<List<String>>.getValuesByIndex(index: Int): List<String> {
     return map { it.getOrNull(index) ?: "" }
 }
+
+val textStyle = TextStyle(
+    fontSize = 16.sp,
+    textAlign = TextAlign.Center,
+)
