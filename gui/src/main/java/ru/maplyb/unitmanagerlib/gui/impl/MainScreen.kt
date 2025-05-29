@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -49,6 +50,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import ru.maplyb.unitmanagerlib.parser.impl.convertToCsv
 
 @Composable
 fun MainScreen(headersData: Map<String, List<String>>, values: Map<String, List<List<String>>>) {
@@ -73,6 +75,18 @@ fun NavigationTabExample(
     }
     Scaffold(modifier = modifier) { contentPadding ->
         Column {
+            Button(
+                content = {
+                    Text(
+                        text = "Импорт"
+                    )
+                },
+                onClick = {
+                    convertToCsv(
+                        headersData, values
+                    )
+                }
+            )
             ScrollableTabRow(
                 selectedTabIndex = selectedDestination,
                 modifier = Modifier
@@ -102,7 +116,7 @@ fun NavigationTabExample(
 }
 
 @Composable
-fun AppNavHost(
+private fun AppNavHost(
     navController: NavHostController,
     startDestination: String,
     destinations: List<String>,
@@ -252,11 +266,11 @@ private fun Headers(
     }
 }
 
-fun List<List<String>>.getValuesByIndex(index: Int): List<String> {
+private fun List<List<String>>.getValuesByIndex(index: Int): List<String> {
     return map { it.getOrNull(index) ?: "" }
 }
 
-val textStyle = TextStyle(
+private val textStyle = TextStyle(
     fontSize = 16.sp,
     textAlign = TextAlign.Center,
 )
