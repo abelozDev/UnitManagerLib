@@ -4,17 +4,13 @@ package ru.maplyb.unitmanagerlib.parser.impl
 fun convertToCsv(
     headersData: Map<String, List<String>>,
     values: Map<String, List<List<String>>>,
-) {
+): List<String> {
     val size = headersData.entries.sumOf {
         if (it.value.isNotEmpty()) it.value.size else 1
     }
-    convertHeaders(headersData).forEach {
-        println(it)
-    }
-    convertValues(values, size).forEach {
-        println(it)
-    }
-
+    val headers = convertHeaders(headersData)
+    val convertedValues = convertValues(values, size)
+    return headers + convertedValues
 }
 private fun convertValues(values: Map<String, List<List<String>>>, size: Int): List<String> {
     val valueList = mutableListOf<String>()

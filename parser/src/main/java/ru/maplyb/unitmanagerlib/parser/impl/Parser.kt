@@ -3,11 +3,24 @@ package ru.maplyb.unitmanagerlib.parser.impl
 import java.awt.AWTEventMulticaster.add
 import java.io.File
 import java.io.InputStream
+import javax.naming.Context
 
 data class FileParsingResult(
     val headers: Map<String, List<String>>,
     val values: Map<String, List<List<String>>>
-)
+) {
+    fun isEmpty(): Boolean = this.headers.isEmpty() && this.values.isEmpty()
+}
+fun parseLines(lines: List<String>): FileParsingResult {
+    if (lines.isEmpty()) return FileParsingResult(mapOf(), mapOf())
+    check(lines.size > 2) { "Размер файла слишком маленький" }
+    val headers = parseCsvHeaders(lines.take(2))
+    val subHeaders = parseSubHeader(headers)
+    val values = parseValues(lines.subList(2, lines.lastIndex+1))
+    println("headers: $subHeaders")
+    println("values: $values")
+    return FileParsingResult(subHeaders, values)
+}
 fun parseFile(inputStream: InputStream): FileParsingResult {
     val lines = buildList {
         inputStream.bufferedReader().use {
@@ -22,15 +35,13 @@ fun parseFile(inputStream: InputStream): FileParsingResult {
     println("values: $values")
     return FileParsingResult(subHeaders, values)
 }
-fun parseFile(file: File): Map<String, List<String>> {
+fun parseFile(file: File): FileParsingResult {
     val lines = file.readLines()
     check(lines.size > 2) { "Размер файла слишком маленький" }
     val headers = parseCsvHeaders(lines.take(2))
     val subHeaders = parseSubHeader(headers)
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
-    println("headers: $subHeaders")
-    println("values: $values")
-    return subHeaders
+    return FileParsingResult(subHeaders, values)
 }
 private fun parseValues(lines: List<String>): Map<String, List<List<String>>> {
     val splittedLines = lines.map { it.split(",") }

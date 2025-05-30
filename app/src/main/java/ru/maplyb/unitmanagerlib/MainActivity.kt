@@ -1,7 +1,12 @@
 package ru.maplyb.unitmanagerlib
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
@@ -25,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,21 +39,63 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.core.net.toFile
+import ru.maplyb.unitmanagerlib.gui.api.UnitManager
 import ru.maplyb.unitmanagerlib.gui.impl.MainScreen
 import ru.maplyb.unitmanagerlib.parser.impl.parseFile
+import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
+import java.io.InputStreamReader
 
 class MainActivity : AppCompatActivity() {
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val unitManager = UnitManager.create()
+        unitManager.init(this)
+
 
         setContent {
-            MyTable(this@MainActivity.assets.open("штат.csv"))
+            var uri: Uri? by remember {
+              mutableStateOf(null)
+            }
+            val contract =
+                rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(), {
+                    if (it != null) {
+                        contentResolver.takePersistableUriPermission(
+                            it,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                        uri = it
+                        /*contentResolver.takePersistableUriPermission(
+                            treeUri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )*/
+                    }
+                })
+            LaunchedEffect(Unit) {
+                contract.launch(arrayOf("*/*"))
+            }
+            if (uri != null) {
+                val inputStream = contentResolver.openInputStream(uri!!)
+                val reader = BufferedReader(InputStreamReader(inputStream))
+
+                val lines = mutableListOf<String>()
+                reader.useLines { sequence ->
+                    sequence.forEach { line ->
+                        lines.add(line)
+                    }
+                }
+                unitManager.Show(uri!!)
+            }
         }
     }
+
 }
+
 
 @Composable
 fun MyTable(file: InputStream) {
@@ -59,12 +107,10 @@ fun MyTable(file: InputStream) {
 
 @Composable
 fun TableHeader(headersData: Map<String, List<String>>, values: Map<String, List<List<String>>>) {
-    val scrollState = rememberScrollState()
-    val currentValues = values["Управление взвода"]
-    MainScreen(
+    /*MainScreen(
         headersData = headersData,
         values = values
-    )
+    )*/
 
 }
 
