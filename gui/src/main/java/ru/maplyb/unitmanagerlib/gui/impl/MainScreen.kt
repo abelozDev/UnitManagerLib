@@ -137,7 +137,9 @@ private fun AppNavHost(
     ) {
         destinations.forEach { destination ->
             composable(destination) {
-                val currentValues = valuesMutable[destination]
+                val currentValues by remember(valuesMutable, destination) {
+                    mutableStateOf(valuesMutable[destination])
+                }
                 Headers(headers, currentValues!!) {
                     val mutableMap = values.toMutableMap()
                     mutableMap[destination] = it
@@ -151,11 +153,67 @@ private fun AppNavHost(
 @Preview(widthDp = 2000, showBackground = true)
 @Composable
 private fun HeadersPreview() {
-    val headersData = mapOf("№п/п" to emptyList<String>(), "№" to emptyList<String>(), "Позывной" to emptyList<String>(), "№ жетона" to emptyList<String>(), "Должность" to emptyList<String>(), "Группа" to emptyList<String>(), "Вооружение" to listOf("тип", "№", "тип", "№"), "Средства связи" to listOf("рст", "телефон"), "Группа крови" to emptyList<String>(), "Позиция" to emptyList<String>(),)
+    val headersData = mapOf(
+        "№п/п" to emptyList<String>(),
+        "№" to emptyList<String>(),
+        "Позывной" to emptyList<String>(),
+        "№ жетона" to emptyList<String>(),
+        "Должность" to emptyList<String>(),
+        "Группа" to emptyList<String>(),
+        "Вооружение" to listOf("тип", "№", "тип", "№"),
+        "Средства связи" to listOf("рст", "телефон"),
+        "Группа крови" to emptyList<String>(),
+        "Позиция" to emptyList<String>(),
+    )
     val values: List<List<String>> = listOf(
-        listOf("1", "1", "Ленон", "В-77777123123123123123", "КВ", "Управление", "12345678901234567890", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
-        listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда"),
-        listOf("1", "1", "Ленон", "В-77777", "КВ", "Управление", "АК", "7302118", "ПМ", "АА-1234", "771526480", "A256418JBK267", "О(I)-", "Фазенда")
+        listOf(
+            "1",
+            "1",
+            "Ленон",
+            "В-77777123123123123123",
+            "КВ",
+            "Управление",
+            "12345678901234567890",
+            "7302118",
+            "ПМ",
+            "АА-1234",
+            "771526480",
+            "A256418JBK267",
+            "О(I)-",
+            "Фазенда"
+        ),
+        listOf(
+            "1",
+            "1",
+            "Ленон",
+            "В-77777",
+            "КВ",
+            "Управление",
+            "АК",
+            "7302118",
+            "ПМ",
+            "АА-1234",
+            "771526480",
+            "A256418JBK267",
+            "О(I)-",
+            "Фазенда"
+        ),
+        listOf(
+            "1",
+            "1",
+            "Ленон",
+            "В-77777",
+            "КВ",
+            "Управление",
+            "АК",
+            "7302118",
+            "ПМ",
+            "АА-1234",
+            "771526480",
+            "A256418JBK267",
+            "О(I)-",
+            "Фазенда"
+        )
     )
 
     Headers(
@@ -177,6 +235,7 @@ data class EditDialogState(
         )
     }
 }
+
 @Composable
 private fun Headers(
     headersData: Map<String, List<String>>,
@@ -185,7 +244,6 @@ private fun Headers(
 ) {
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
-    var currentValuesIndex by remember { mutableIntStateOf(0) }
     val textMeasurer = rememberTextMeasurer()
     var editDialogState by remember {
         mutableStateOf(EditDialogState.default)
@@ -196,7 +254,7 @@ private fun Headers(
             .verticalScroll(verticalScrollState)
             .fillMaxWidth()
     ) {
-        currentValuesIndex = 0
+        var currentValuesIndex = 0
         headersData.forEach { (mainHeader, subHeaders) ->
             val maxTextSizeByAllSubheaders = mutableListOf<String>()
             for (i in currentValuesIndex..currentValuesIndex + subHeaders.lastIndex + 1) {
@@ -234,8 +292,8 @@ private fun Headers(
                         subHeaders.mapIndexed { index, sub ->
                             val valuesAtIndex = values.getValuesByIndex(currentValuesIndex + index)
                             val allText = listOf(sub, *valuesAtIndex.toTypedArray())
-                            val maxText = allText.maxByOrNull { it.length } ?: ""
-                            val measured = textMeasurer.measure(AnnotatedString(maxText))
+                            val _maxText = allText.maxByOrNull { it.length } ?: ""
+                            val measured = textMeasurer.measure(AnnotatedString(_maxText))
                             measured.size.width
                         }
                     }
@@ -275,15 +333,19 @@ private fun Headers(
                                                         name = value,
                                                         visibility = true,
                                                         dismiss = {
-                                                            editDialogState = editDialogState.copy(visibility = false)
+                                                            editDialogState =
+                                                                editDialogState.copy(visibility = false)
                                                         },
                                                         confirm = {
-                                                            val mutableList = values[valuesIndex].toMutableList()
-                                                            mutableList[thisCurrentValueIndex] = it
-                                                            val mutableValuesList = values.toMutableList()
-                                                            mutableValuesList[valuesIndex] = mutableList
-                                                            updateValues(mutableValuesList)
-                                                            editDialogState = editDialogState.copy(visibility = false)
+                                                            updateValues(
+                                                                values.copyMap(
+                                                                    it,
+                                                                    valuesIndex,
+                                                                    thisCurrentValueIndex
+                                                                )
+                                                            )
+                                                            editDialogState =
+                                                                editDialogState.copy(visibility = false)
                                                         }
                                                     )
                                                 },
@@ -305,7 +367,7 @@ private fun Headers(
                         /*Значения*/
                         values.getValuesByIndex(currentValuesIndex).forEachIndexed { index, value ->
                             val thisCurrentValueIndex by remember {
-                                mutableStateOf(currentValuesIndex)
+                                mutableIntStateOf(currentValuesIndex)
                             }
                             Text(
                                 text = value,
@@ -318,15 +380,19 @@ private fun Headers(
                                                 name = value,
                                                 visibility = true,
                                                 dismiss = {
-                                                    editDialogState = editDialogState.copy(visibility = false)
+                                                    editDialogState =
+                                                        editDialogState.copy(visibility = false)
                                                 },
                                                 confirm = {
-                                                    val mutableList = values[index].toMutableList()
-                                                    mutableList[thisCurrentValueIndex] = it
-                                                    val mutableValuesList = values.toMutableList()
-                                                    mutableValuesList[index] = mutableList
-                                                    updateValues(mutableValuesList)
-                                                    editDialogState = editDialogState.copy(visibility = false)
+                                                    updateValues(
+                                                        values.copyMap(
+                                                            it,
+                                                            index,
+                                                            thisCurrentValueIndex
+                                                        )
+                                                    )
+                                                    editDialogState =
+                                                        editDialogState.copy(visibility = false)
                                                 }
                                             )
                                         },
@@ -347,6 +413,18 @@ private fun Headers(
     if (editDialogState.visibility) {
         EditDialog(editDialogState)
     }
+}
+
+private fun List<List<String>>.copyMap(
+    newValue: String,
+    columnIndex: Int,
+    rowIndex: Int
+): List<List<String>> {
+    val mutableList = this[columnIndex].toMutableList()
+    mutableList[rowIndex] = newValue
+    val mutableValuesList = this.toMutableList()
+    mutableValuesList[columnIndex] = mutableList
+    return mutableValuesList
 }
 
 private fun List<List<String>>.getValuesByIndex(index: Int): List<String> {
