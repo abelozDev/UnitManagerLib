@@ -23,3 +23,4 @@ rootProject.name = "UnitManagerLib"
 include(":app")
 include(":parser")
 include(":gui")
+include(":core")

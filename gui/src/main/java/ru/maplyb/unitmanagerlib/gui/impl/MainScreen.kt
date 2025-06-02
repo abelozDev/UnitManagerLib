@@ -9,11 +9,19 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -43,6 +51,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
+import ru.maplyb.unitmanagerlib.core.util.copyMap
+import ru.maplyb.unitmanagerlib.core.util.getValuesByIndex
+import ru.maplyb.unitmanagerlib.gui.impl.table.Table
 import ru.maplyb.unitmanagerlib.parser.impl.convertToCsv
 
 @Composable
@@ -73,10 +85,11 @@ fun NavigationTabExample(
     }
     Scaffold(modifier = modifier) { contentPadding ->
         Column {
-            Button(
+            IconButton(
+                modifier = Modifier.align(Alignment.End),
                 content = {
-                    Text(
-                        text = "Импорт"
+                    Icon(
+                        Icons.Default.Share, null
                     )
                 },
                 onClick = {
@@ -111,13 +124,6 @@ fun NavigationTabExample(
         }
     }
 }
-//val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-//intent.addFlags(
-//    Intent.FLAG_GRANT_READ_URI_PERMISSION or
-//    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-//    Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-//)
-//startActivityForResult(intent, REQUEST_CODE_PICK_FOLDER)
 
 @Composable
 private fun AppNavHost(
@@ -140,15 +146,43 @@ private fun AppNavHost(
                 val currentValues by remember(valuesMutable, destination) {
                     mutableStateOf(valuesMutable[destination])
                 }
-                Headers(headers, currentValues!!) {
-                    val mutableMap = values.toMutableMap()
-                    mutableMap[destination] = it
-                    valuesMutable = mutableMap
+                Column {
+                    Table(headers, currentValues!!) {
+                        val mutableMap = values.toMutableMap()
+                        mutableMap[destination] = it
+                        valuesMutable = mutableMap
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    IconButton(
+                        onClick = {
+                            val mutableMap = valuesMutable.toMutableMap()
+                            val mutableDestinationMap = mutableMap[destination]?.toMutableList()
+                            val size = headers.values.sumOf { it.size } + headers.size
+                            val newItem = MutableList(size) { "" }
+                            newItem[0] = ((currentValues?.last()?.get(0)?.toInt() ?: -1) + 1).toString()
+                            mutableDestinationMap?.add(newItem)
+                            mutableMap[destination] = mutableDestinationMap!!
+                            valuesMutable = mutableMap
+                        },
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(end = 16.dp)
+                            .size(36.dp),
+                        content = {
+                            Icon(
+                                Icons.Default.AddCircle,
+                                contentDescription = "Add"
+                            )
+                        }
+                    )
                 }
+
             }
         }
     }
 }
+
+
 
 @Preview(widthDp = 2000, showBackground = true)
 @Composable
@@ -216,222 +250,9 @@ private fun HeadersPreview() {
         )
     )
 
-    Headers(
+    Table(
         headersData = headersData,
         values = values,
         {}
     )
 }
-
-data class EditDialogState(
-    val name: String = "",
-    val visibility: Boolean = false,
-    val confirm: (String) -> Unit,
-    val dismiss: () -> Unit
-) {
-    companion object {
-        val default = EditDialogState(
-            "", false, {}, {}
-        )
-    }
-}
-
-@Composable
-private fun Headers(
-    headersData: Map<String, List<String>>,
-    values: List<List<String>>,
-    updateValues: (List<List<String>>) -> Unit
-) {
-    val horizontalScrollState = rememberScrollState()
-    val verticalScrollState = rememberScrollState()
-    val textMeasurer = rememberTextMeasurer()
-    var editDialogState by remember {
-        mutableStateOf(EditDialogState.default)
-    }
-    Row(
-        modifier = Modifier
-            .horizontalScroll(horizontalScrollState)
-            .verticalScroll(verticalScrollState)
-            .fillMaxWidth()
-    ) {
-        var currentValuesIndex = 0
-        headersData.forEach { (mainHeader, subHeaders) ->
-            val maxTextSizeByAllSubheaders = mutableListOf<String>()
-            for (i in currentValuesIndex..currentValuesIndex + subHeaders.lastIndex + 1) {
-                maxTextSizeByAllSubheaders.add(values.getValuesByIndex(i).maxByOrNull { it.length }
-                    ?: "")
-            }
-            val maxText =
-                listOf(maxTextSizeByAllSubheaders.joinToString(), mainHeader).maxBy { it.length }
-            println("maxTextSizeByAllSubheaders = ${maxTextSizeByAllSubheaders.joinToString()}")
-            val textLayoutResult = textMeasurer.measure(
-                text = AnnotatedString(maxText),
-                style = textStyle,
-                constraints = Constraints() // без ограничений
-            )
-            val maxWidth = with(LocalDensity.current) {
-                textLayoutResult.size.width.toDp()
-            }
-            Column(
-                modifier = Modifier
-                    .width(maxWidth + (32 * (subHeaders.size + 1)).dp)
-                    .border(1.dp, Color.Black),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                /*Основной хедер*/
-                Text(
-                    text = mainHeader,
-                    style = textStyle,
-                    modifier = Modifier
-                        .padding(4.dp),
-                    maxLines = 1,
-                    fontWeight = FontWeight.Bold
-                )
-                if (subHeaders.isNotEmpty()) {
-                    val columnWidths = remember {
-                        subHeaders.mapIndexed { index, sub ->
-                            val valuesAtIndex = values.getValuesByIndex(currentValuesIndex + index)
-                            val allText = listOf(sub, *valuesAtIndex.toTypedArray())
-                            val _maxText = allText.maxByOrNull { it.length } ?: ""
-                            val measured = textMeasurer.measure(AnnotatedString(_maxText))
-                            measured.size.width
-                        }
-                    }
-                    val totalWidth = columnWidths.sum()
-                    Row {
-                        subHeaders.forEachIndexed { index, sub ->
-                            val valuesAtIndex = values.getValuesByIndex(currentValuesIndex)
-                            val weight = columnWidths[index].toFloat() / totalWidth.toFloat()
-
-                            Column(
-                                modifier = Modifier.weight(weight)
-                            ) {
-                                /*Дочерний хедер*/
-                                Text(
-                                    text = sub,
-                                    maxLines = 1,
-                                    style = textStyle,
-                                    modifier = Modifier
-                                        .height(24.dp)
-                                        .fillMaxWidth()
-                                        .border(1.dp, Color.Black)
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                )
-                                /*Значения*/
-                                valuesAtIndex.forEachIndexed { valuesIndex, value ->
-                                    val thisCurrentValueIndex by remember {
-                                        mutableStateOf(currentValuesIndex)
-                                    }
-                                    Text(
-                                        text = value,
-                                        style = textStyle,
-                                        maxLines = 1,
-                                        modifier = Modifier
-                                            .combinedClickable(
-                                                onLongClick = {
-                                                    editDialogState = EditDialogState(
-                                                        name = value,
-                                                        visibility = true,
-                                                        dismiss = {
-                                                            editDialogState =
-                                                                editDialogState.copy(visibility = false)
-                                                        },
-                                                        confirm = {
-                                                            updateValues(
-                                                                values.copyMap(
-                                                                    it,
-                                                                    valuesIndex,
-                                                                    thisCurrentValueIndex
-                                                                )
-                                                            )
-                                                            editDialogState =
-                                                                editDialogState.copy(visibility = false)
-                                                        }
-                                                    )
-                                                },
-                                                onClick = {}
-                                            )
-                                            .wrapContentHeight()
-                                            .fillMaxWidth()
-                                            .border(1.dp, Color.Black)
-                                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    )
-                                }
-                            }
-                            currentValuesIndex++
-                        }
-                    }
-                } else {
-                    Spacer(Modifier.height(24.dp))
-                    Column {
-                        /*Значения*/
-                        values.getValuesByIndex(currentValuesIndex).forEachIndexed { index, value ->
-                            val thisCurrentValueIndex by remember {
-                                mutableIntStateOf(currentValuesIndex)
-                            }
-                            Text(
-                                text = value,
-                                maxLines = 1,
-                                style = textStyle,
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        onLongClick = {
-                                            editDialogState = EditDialogState(
-                                                name = value,
-                                                visibility = true,
-                                                dismiss = {
-                                                    editDialogState =
-                                                        editDialogState.copy(visibility = false)
-                                                },
-                                                confirm = {
-                                                    updateValues(
-                                                        values.copyMap(
-                                                            it,
-                                                            index,
-                                                            thisCurrentValueIndex
-                                                        )
-                                                    )
-                                                    editDialogState =
-                                                        editDialogState.copy(visibility = false)
-                                                }
-                                            )
-                                        },
-                                        onClick = {}
-                                    )
-                                    .wrapContentHeight()
-                                    .fillMaxWidth()
-                                    .border(1.dp, Color.Black)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                            )
-                        }
-                    }
-                    currentValuesIndex++
-                }
-            }
-        }
-    }
-    if (editDialogState.visibility) {
-        EditDialog(editDialogState)
-    }
-}
-
-private fun List<List<String>>.copyMap(
-    newValue: String,
-    columnIndex: Int,
-    rowIndex: Int
-): List<List<String>> {
-    val mutableList = this[columnIndex].toMutableList()
-    mutableList[rowIndex] = newValue
-    val mutableValuesList = this.toMutableList()
-    mutableValuesList[columnIndex] = mutableList
-    return mutableValuesList
-}
-
-private fun List<List<String>>.getValuesByIndex(index: Int): List<String> {
-    return map { it.getOrNull(index) ?: "" }
-}
-
-private val textStyle = TextStyle(
-    fontSize = 16.sp,
-    textAlign = TextAlign.Center,
-)

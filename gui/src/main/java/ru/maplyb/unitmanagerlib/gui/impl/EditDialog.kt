@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import ru.maplyb.unitmanagerlib.gui.impl.domain.EditDialogState
 
 @Composable
 internal fun EditDialog(
