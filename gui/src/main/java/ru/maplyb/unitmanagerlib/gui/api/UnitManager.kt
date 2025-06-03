@@ -11,7 +11,7 @@ interface UnitManager {
     fun init(activity: Activity)
 
     @Composable
-    fun Show(uri: Uri)
+    fun Show(uri: Uri?)
 
     companion object {
         fun create(): UnitManager {

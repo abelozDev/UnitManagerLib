@@ -1,15 +1,14 @@
 package ru.maplyb.unitmanagerlib.parser.impl
 
-import java.awt.AWTEventMulticaster.add
 import java.io.File
 import java.io.InputStream
-import javax.naming.Context
 
 data class FileParsingResult(
     val headers: Map<String, List<String>>,
     val values: Map<String, List<List<String>>>
 ) {
     fun isEmpty(): Boolean = this.headers.isEmpty() && this.values.isEmpty()
+
 }
 fun parseLines(lines: List<String>): FileParsingResult {
     if (lines.isEmpty()) return FileParsingResult(mapOf(), mapOf())

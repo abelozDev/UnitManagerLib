@@ -1,11 +1,11 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "ru.maplyb.unitmanagerlib.gui"
+    namespace = "ru.maplyb.unitmanagerlib.common.database"
     compileSdk = 35
 
     defaultConfig {
@@ -31,25 +31,18 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    buildFeatures {
-        compose = true
-    }
 }
 
 dependencies {
-//    implementation(project(":common:database"))
-    implementation(project(":core"))
-    implementation(project(":parser"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.navigation.compose)
-    implementation(libs.androidx.material3)
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    api(libs.room.ktx)
+    api(libs.room.compiler)
+    api(libs.room)
+    implementation(libs.kotlinx.serialization.json)
 }

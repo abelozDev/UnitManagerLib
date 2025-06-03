@@ -148,7 +148,7 @@ private fun AppNavHost(
                 }
                 Column {
                     Table(headers, currentValues!!) {
-                        val mutableMap = values.toMutableMap()
+                        val mutableMap = valuesMutable.toMutableMap()
                         mutableMap[destination] = it
                         valuesMutable = mutableMap
                     }
@@ -158,9 +158,21 @@ private fun AppNavHost(
                             val mutableMap = valuesMutable.toMutableMap()
                             val mutableDestinationMap = mutableMap[destination]?.toMutableList()
                             val size = headers.values.sumOf { it.size } + headers.size
+                            /*Размер списка для нового элемента*/
                             val newItem = MutableList(size) { "" }
-                            newItem[0] = ((currentValues?.last()?.get(0)?.toInt() ?: -1) + 1).toString()
+                            /*Порядковый номер общий и в подразделении*/
+                            newItem[0] = ((currentValues?.last()?.get(0)?.toInt() ?: 0) + 1).toString()
+                            newItem[1] = ((currentValues?.last()?.get(1)?.toInt() ?: 0) + 1).toString()
                             mutableDestinationMap?.add(newItem)
+                            /*Сдвиг общих порядковых номеров у следующих подразделений*/
+                            for (i in destinations.indexOf(destination)..destinations.lastIndex) {
+                                val current = destinations[i]
+                                mutableMap[current] = mutableMap[current]!!.map {
+                                    val mutable = it.toMutableList()
+                                    mutable[0] = ((it[0].toIntOrNull() ?: -1) + 1).toString()
+                                    mutable
+                                }
+                            }
                             mutableMap[destination] = mutableDestinationMap!!
                             valuesMutable = mutableMap
                         },
