@@ -1,5 +1,6 @@
 package ru.maplyb.unitmanagerlib.gui.impl.table
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -32,15 +33,18 @@ import androidx.compose.ui.unit.dp
 import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
 import ru.maplyb.unitmanagerlib.core.util.copyMap
 import ru.maplyb.unitmanagerlib.core.util.getValuesByIndex
+import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.impl.EditDialog
 import ru.maplyb.unitmanagerlib.gui.impl.domain.EditDialogState
-
 
 @Composable
 internal fun Table(
     headersData: Map<String, List<String>>,
     values: List<List<String>>,
-    updateValues: (List<List<String>>) -> Unit
+    selectMode: Boolean,
+    selectItem: (RowIndex) -> Unit,
+    selectedValues: List<RowIndex>,
+    updateValues: (List<List<String>>) -> Unit,
 ) {
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
@@ -63,7 +67,6 @@ internal fun Table(
             }
             val maxText =
                 listOf(maxTextSizeByAllSubheaders.joinToString(), mainHeader).maxBy { it.length }
-            println("maxTextSizeByAllSubheaders = ${maxTextSizeByAllSubheaders.joinToString()}")
             val textLayoutResult = textMeasurer.measure(
                 text = AnnotatedString(maxText),
                 style = TableTextStyle(),
@@ -149,10 +152,17 @@ internal fun Table(
                                                         }
                                                     )
                                                 },
-                                                onClick = {}
+                                                onClick = {
+                                                    if (selectMode) selectItem(valuesIndex)
+                                                }
                                             )
                                             .wrapContentHeight()
                                             .fillMaxWidth()
+                                            .then(if (selectedValues.contains(valuesIndex)) {
+                                                Modifier.background(Color.Green)
+                                            } else {
+                                                Modifier
+                                            })
                                             .border(1.dp, Color.Black)
                                             .padding(horizontal = 8.dp, vertical = 4.dp),
                                     )
@@ -196,10 +206,17 @@ internal fun Table(
                                                 }
                                             )
                                         },
-                                        onClick = {}
+                                        onClick = {
+                                            if (selectMode) selectItem(index)
+                                        }
                                     )
                                     .wrapContentHeight()
                                     .fillMaxWidth()
+                                    .then(if (selectedValues.contains(index)) {
+                                        Modifier.background(Color.Green)
+                                    } else {
+                                        Modifier
+                                    })
                                     .border(1.dp, Color.Black)
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                             )

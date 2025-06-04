@@ -3,6 +3,7 @@ package ru.maplyb.unitmanagerlib.gui.impl
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -27,6 +29,7 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,24 +39,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
-import ru.maplyb.unitmanagerlib.core.util.copyMap
-import ru.maplyb.unitmanagerlib.core.util.getValuesByIndex
+import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.impl.table.Table
 import ru.maplyb.unitmanagerlib.parser.impl.convertToCsv
 
@@ -83,20 +76,38 @@ fun NavigationTabExample(
             )
         )
     }
+    var selectMode by remember {
+        mutableStateOf(false)
+    }
     Scaffold(modifier = modifier) { contentPadding ->
         Column {
-            IconButton(
-                modifier = Modifier.align(Alignment.End),
-                content = {
-                    Icon(
-                        Icons.Default.Share, null
-                    )
-                },
-                onClick = {
-                    val list = convertToCsv(headersData, values)
-                    share(list)
-                }
-            )
+            Row(
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(
+                    content = {
+                        Icon(
+                            Icons.Default.Share, null
+                        )
+                    },
+                    onClick = {
+                        val list = convertToCsv(headersData, values)
+                        share(list)
+                    }
+                )
+                IconButton(
+                    content = {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                            tint = if (selectMode) Color.Green else Color.Unspecified
+                        )
+                    },
+                    onClick = {
+                        selectMode = !selectMode
+                    }
+                )
+            }
             ScrollableTabRow(
                 selectedTabIndex = selectedDestination,
                 modifier = Modifier
@@ -120,7 +131,14 @@ fun NavigationTabExample(
                     )
                 }
             }
-            AppNavHost(navController, startDestination, destinations, headersData, values)
+            AppNavHost(
+                navController,
+                startDestination,
+                destinations,
+                headersData,
+                values,
+                selectMode
+            )
         }
     }
 }
@@ -132,10 +150,19 @@ private fun AppNavHost(
     destinations: List<String>,
     headers: Map<String, List<String>>,
     values: Map<String, List<List<String>>>,
+    selectMode: Boolean,
     modifier: Modifier = Modifier
 ) {
     var valuesMutable by remember {
         mutableStateOf(values)
+    }
+    var selectedMap by remember {
+        mutableStateOf(mapOf<String, List<RowIndex>>())
+    }
+    LaunchedEffect(selectMode) {
+        if (!selectMode) {
+            selectedMap = emptyMap()
+        }
     }
     NavHost(
         navController,
@@ -147,7 +174,24 @@ private fun AppNavHost(
                     mutableStateOf(valuesMutable[destination])
                 }
                 Column {
-                    Table(headers, currentValues!!) {
+                    Table(
+                        headers,
+                        currentValues!!,
+                        selectMode,
+                        selectItem = {
+                            val mutableSelectedMap = selectedMap.toMutableMap()
+                            if (mutableSelectedMap[destination]?.contains(it) == true) {
+                                /*Если есть в списке - удаляем*/
+                                mutableSelectedMap[destination] = selectedMap[destination]?.minus(it) ?: emptyList()
+                            } else {
+                                /*Если нет - добавляем*/
+                                mutableSelectedMap[destination] = selectedMap[destination]?.plus(it) ?: listOf(it)
+                            }
+                            selectedMap = mutableSelectedMap
+                        },
+                        selectedValues = selectedMap[destination] ?: emptyList()
+                    ) {
+                        /*Обновление значения*/
                         val mutableMap = valuesMutable.toMutableMap()
                         mutableMap[destination] = it
                         valuesMutable = mutableMap
@@ -161,8 +205,10 @@ private fun AppNavHost(
                             /*Размер списка для нового элемента*/
                             val newItem = MutableList(size) { "" }
                             /*Порядковый номер общий и в подразделении*/
-                            newItem[0] = ((currentValues?.last()?.get(0)?.toInt() ?: 0) + 1).toString()
-                            newItem[1] = ((currentValues?.last()?.get(1)?.toInt() ?: 0) + 1).toString()
+                            newItem[0] =
+                                ((currentValues?.last()?.get(0)?.toInt() ?: 0) + 1).toString()
+                            newItem[1] =
+                                ((currentValues?.last()?.get(1)?.toInt() ?: 0) + 1).toString()
                             mutableDestinationMap?.add(newItem)
                             /*Сдвиг общих порядковых номеров у следующих подразделений*/
                             for (i in destinations.indexOf(destination)..destinations.lastIndex) {
@@ -261,10 +307,11 @@ private fun HeadersPreview() {
             "Фазенда"
         )
     )
-
+/*
     Table(
         headersData = headersData,
         values = values,
+        false,
         {}
-    )
+    )*/
 }
