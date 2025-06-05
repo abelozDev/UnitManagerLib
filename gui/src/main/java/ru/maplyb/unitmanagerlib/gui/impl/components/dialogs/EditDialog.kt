@@ -1,4 +1,4 @@
-package ru.maplyb.unitmanagerlib.gui.impl
+package ru.maplyb.unitmanagerlib.gui.impl.components.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column

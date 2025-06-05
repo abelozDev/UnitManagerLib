@@ -34,7 +34,7 @@ import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
 import ru.maplyb.unitmanagerlib.core.util.copyMap
 import ru.maplyb.unitmanagerlib.core.util.getValuesByIndex
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
-import ru.maplyb.unitmanagerlib.gui.impl.EditDialog
+import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.EditDialog
 import ru.maplyb.unitmanagerlib.gui.impl.domain.EditDialogState
 
 @Composable

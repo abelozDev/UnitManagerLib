@@ -1,27 +1,21 @@
 package ru.maplyb.unitmanagerlib.gui.impl
 
-import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -39,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,6 +42,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
+import ru.maplyb.unitmanagerlib.gui.R
+import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.ConfirmDialog
+import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.MoveDialog
 import ru.maplyb.unitmanagerlib.gui.impl.table.Table
 import ru.maplyb.unitmanagerlib.parser.impl.convertToCsv
 
@@ -79,6 +77,18 @@ fun NavigationTabExample(
     var selectMode by remember {
         mutableStateOf(false)
     }
+    var selectedMap by remember {
+        mutableStateOf(mapOf<String, List<RowIndex>>())
+    }
+    var valuesMutable by remember {
+        mutableStateOf(values)
+    }
+    var showDeleteDialog by remember {
+        mutableStateOf(false)
+    }
+    var showMoveDialog by remember {
+        mutableStateOf(false)
+    }
     Scaffold(modifier = modifier) { contentPadding ->
         Column {
             Row(
@@ -107,6 +117,37 @@ fun NavigationTabExample(
                         selectMode = !selectMode
                     }
                 )
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = selectMode,
+                    enter = expandHorizontally() + fadeIn(),
+                    exit = shrinkHorizontally() + fadeOut()
+                ) {
+                    Row {
+                        IconButton(
+                            content = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showDeleteDialog = true
+                            }
+                        )
+                        IconButton(
+                            content = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_move),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                showMoveDialog = true
+                            }
+                        )
+                    }
+                }
             }
             ScrollableTabRow(
                 selectedTabIndex = selectedDestination,
@@ -132,15 +173,75 @@ fun NavigationTabExample(
                 }
             }
             AppNavHost(
-                navController,
-                startDestination,
-                destinations,
-                headersData,
-                values,
-                selectMode
+                navController = navController,
+                startDestination = startDestination,
+                destinations = destinations,
+                headers = headersData,
+                valuesMutable = valuesMutable,
+                selectMode = selectMode,
+                selectedMap = selectedMap,
+                updateSelectedMap = {
+                    selectedMap = it
+                },
+                updateValues = {
+                    valuesMutable = it
+                }
             )
         }
     }
+    if (showDeleteDialog) {
+        ConfirmDialog(
+            title = "Удаление",
+            message = "Вы уверены, что хотите удалить элементы из списка?",
+            onConfirm = {
+                valuesMutable = deleteItems(valuesMutable, selectedMap)
+                selectMode = false
+                showDeleteDialog = false
+            },
+            onDismissRequest = {
+                showDeleteDialog = false
+            }
+        )
+    }
+    if (showMoveDialog) {
+        MoveDialog(
+            title = "Перемещение элементов",
+            message = "Выберите, куда переместить элементы:",
+            items = destinations,
+            onDismissRequest = {
+                showMoveDialog = false
+            },
+            select = { header ->
+                val newValues = deleteItems(valuesMutable, selectedMap).toMutableMap()
+                val listToAdd = buildList {
+                    selectedMap.entries.forEach { (key, value) ->
+                        valuesMutable[key]?.forEachIndexed { index, list ->
+                            if (value.contains(index)) add(list)
+                        }
+                    }
+                }
+                newValues[header] = newValues[header]?.plus(listToAdd) ?: emptyList()
+                valuesMutable = newValues
+                showMoveDialog = false
+                selectMode = false
+            }
+        )
+    }
+}
+
+private fun deleteItems(
+    valuesMutable: Map<String, List<List<String>>>,
+    selectedMap: Map<String, List<RowIndex>>
+): Map<String, List<List<String>>> {
+    val newValues = valuesMutable.toMutableMap()
+    selectedMap.forEach { (key, value) ->
+        newValues[key].takeIf { newValues.containsKey(key)}?.let {
+            newValues[key] = it.filterIndexed { index, strings ->
+                !value.contains(index)
+            }
+        }
+    }
+    return newValues
 }
 
 @Composable
@@ -149,19 +250,16 @@ private fun AppNavHost(
     startDestination: String,
     destinations: List<String>,
     headers: Map<String, List<String>>,
-    values: Map<String, List<List<String>>>,
     selectMode: Boolean,
+    selectedMap: Map<String, List<RowIndex>>,
+    valuesMutable: Map<String, List<List<String>>>,
+    updateValues: (Map<String, List<List<String>>>) -> Unit,
+    updateSelectedMap: (Map<String, List<RowIndex>>) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var valuesMutable by remember {
-        mutableStateOf(values)
-    }
-    var selectedMap by remember {
-        mutableStateOf(mapOf<String, List<RowIndex>>())
-    }
     LaunchedEffect(selectMode) {
         if (!selectMode) {
-            selectedMap = emptyMap()
+            updateSelectedMap(emptyMap())
         }
     }
     NavHost(
@@ -187,14 +285,14 @@ private fun AppNavHost(
                                 /*Если нет - добавляем*/
                                 mutableSelectedMap[destination] = selectedMap[destination]?.plus(it) ?: listOf(it)
                             }
-                            selectedMap = mutableSelectedMap
+                            updateSelectedMap(mutableSelectedMap)
                         },
                         selectedValues = selectedMap[destination] ?: emptyList()
                     ) {
                         /*Обновление значения*/
                         val mutableMap = valuesMutable.toMutableMap()
                         mutableMap[destination] = it
-                        valuesMutable = mutableMap
+                        updateValues(mutableMap)
                     }
                     Spacer(Modifier.height(16.dp))
                     IconButton(
@@ -205,10 +303,9 @@ private fun AppNavHost(
                             /*Размер списка для нового элемента*/
                             val newItem = MutableList(size) { "" }
                             /*Порядковый номер общий и в подразделении*/
-                            newItem[0] =
-                                ((currentValues?.last()?.get(0)?.toInt() ?: 0) + 1).toString()
+                            newItem[0] = ((currentValues?.lastOrNull()?.get(0)?.toInt() ?: 0) + 1).toString()
                             newItem[1] =
-                                ((currentValues?.last()?.get(1)?.toInt() ?: 0) + 1).toString()
+                                ((currentValues?.lastOrNull()?.get(1)?.toInt() ?: 0) + 1).toString()
                             mutableDestinationMap?.add(newItem)
                             /*Сдвиг общих порядковых номеров у следующих подразделений*/
                             for (i in destinations.indexOf(destination)..destinations.lastIndex) {
@@ -220,7 +317,7 @@ private fun AppNavHost(
                                 }
                             }
                             mutableMap[destination] = mutableDestinationMap!!
-                            valuesMutable = mutableMap
+                            updateValues(mutableMap)
                         },
                         modifier = Modifier
                             .align(Alignment.End)
