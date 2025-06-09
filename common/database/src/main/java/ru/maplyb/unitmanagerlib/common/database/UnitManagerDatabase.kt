@@ -15,6 +15,6 @@ abstract class UnitManagerDatabase : RoomDatabase() {
     abstract fun headerDao(): HeaderDao
     abstract fun valueDao(): ValuesDao
     suspend fun databaseIsNotEmpty(): Boolean {
-        return headerDao().getAll().isNotEmpty() || valueDao().getAll().isNotEmpty()
+        return headerDao().getAll().isNotEmpty()
     }
 }

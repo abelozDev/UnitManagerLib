@@ -56,41 +56,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val unitManager = UnitManager.create()
         unitManager.init(this)
-
-
         setContent {
-            var uri: Uri? by remember {
-              mutableStateOf(null)
-            }
-            val contract =
-                rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(), {
-                    if (it != null) {
-                        contentResolver.takePersistableUriPermission(
-                            it,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                        uri = it
-                        /*contentResolver.takePersistableUriPermission(
-                            treeUri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        )*/
-                    }
-                })
-            LaunchedEffect(Unit) {
-                contract.launch(arrayOf("*/*"))
-            }
-            if (uri != null) {
-                val inputStream = contentResolver.openInputStream(uri!!)
-                val reader = BufferedReader(InputStreamReader(inputStream))
-
-                val lines = mutableListOf<String>()
-                reader.useLines { sequence ->
-                    sequence.forEach { line ->
-                        lines.add(line)
-                    }
-                }
-                unitManager.Show(uri!!)
-            }
+            unitManager.TableHandler()
         }
     }
 

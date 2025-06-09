@@ -37,7 +37,7 @@ android {
 }
 
 dependencies {
-//    implementation(project(":common:database"))
+    implementation(project(":common:database"))
     implementation(project(":core"))
     implementation(project(":parser"))
     implementation(libs.androidx.core.ktx)

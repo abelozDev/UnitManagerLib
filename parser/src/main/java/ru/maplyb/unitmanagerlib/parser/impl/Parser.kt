@@ -8,11 +8,11 @@ data class FileParsingResult(
     val values: Map<String, List<List<String>>>
 ) {
     fun isEmpty(): Boolean = this.headers.isEmpty() && this.values.isEmpty()
-
 }
+
 fun parseLines(lines: List<String>): FileParsingResult {
     if (lines.isEmpty()) return FileParsingResult(mapOf(), mapOf())
-    check(lines.size > 2) { "Размер файла слишком маленький" }
+    require(lines.size > 2) { "Размер файла слишком маленький" }
     val headers = parseCsvHeaders(lines.take(2))
     val subHeaders = parseSubHeader(headers)
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
@@ -26,7 +26,7 @@ fun parseFile(inputStream: InputStream): FileParsingResult {
             addAll(it.readLines())
         }
     }
-    check(lines.size > 2) { "Размер файла слишком маленький" }
+    require(lines.size > 2) { "Размер файла слишком маленький" }
     val headers = parseCsvHeaders(lines.take(2))
     val subHeaders = parseSubHeader(headers)
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
@@ -36,7 +36,7 @@ fun parseFile(inputStream: InputStream): FileParsingResult {
 }
 fun parseFile(file: File): FileParsingResult {
     val lines = file.readLines()
-    check(lines.size > 2) { "Размер файла слишком маленький" }
+    require(lines.size > 2) { "Размер файла слишком маленький" }
     val headers = parseCsvHeaders(lines.take(2))
     val subHeaders = parseSubHeader(headers)
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
