@@ -143,6 +143,22 @@ class DatabaseRepositoryImpl(
         } else flow { emit(null) }
     }
 
+    override suspend fun updateValues(
+        type: String,
+        rowIndex: Int,
+        columnIndex: Int,
+        newValue: String,
+    ) {
+        val allByType = database.valueDao().getAllByType(type)
+        val currentValue = allByType[columnIndex]
+        val mutableValues = currentValue.values.toMutableList()
+        mutableValues[rowIndex] = newValue
+        val updated = currentValue.copy(
+            values = mutableValues
+        )
+        database.valueDao().insertValue(updated)
+    }
+
     override suspend fun getTableInfo(): FileParsingResultDTO? {
         return if (database.databaseIsNotEmpty()) {
             /*Получаем хедер (пока там может быть только один)*/

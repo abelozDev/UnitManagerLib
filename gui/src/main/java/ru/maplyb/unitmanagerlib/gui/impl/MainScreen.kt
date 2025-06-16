@@ -224,8 +224,8 @@ fun NavigationTabExample(
                         onAction(MainScreenAction.SelectItem(it))
                     },
                     addItem = addItem,
-                    updateValues = {
-
+                    updateValues = {type, rowindex, ColumntIndex, newValue ->
+                        onAction(MainScreenAction.UpdateValues(type, rowindex, ColumntIndex, newValue))
                     }
                 )
             }
@@ -282,7 +282,12 @@ private fun AppNavHost(
     selectMode: Boolean,
     selectedMap: Map<String, List<RowIndex>>,
     valuesMutable: Map<String, List<List<String>>>,
-    updateValues: (Map<String, List<List<String>>>) -> Unit,
+    updateValues: (
+        type: String,
+        rowIndex: Int,
+        columnIndex: Int,
+        newValue: String
+            ) -> Unit,
     updateSelectedMap: (Pair<String, RowIndex>) -> Unit,
     addItem: (type: String) -> Unit,
     modifier: Modifier = Modifier
@@ -308,11 +313,13 @@ private fun AppNavHost(
                             updateSelectedMap(Pair(destination, it))
                         },
                         selectedValues = selectedMap[destination] ?: emptyList()
-                    ) {
-                        /*Обновление значения*/
-                        val mutableMap = valuesMutable.toMutableMap()
-                        mutableMap[destination] = it
-                        updateValues(mutableMap)
+                    ) { rowIndex, columnIndex, newValue ->
+                        updateValues(
+                            destination,
+                            rowIndex,
+                            columnIndex,
+                            newValue
+                        )
                     }
                     Spacer(Modifier.height(16.dp))
                     IconButton(

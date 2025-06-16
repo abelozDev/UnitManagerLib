@@ -24,7 +24,7 @@ sealed interface MainScreenAction {
     data class AddItem(val type: String) : MainScreenAction
     data class UpdateState(val state: MainScreenState) : MainScreenAction
     data class SetTableName(val tableName: String) : MainScreenAction
-    data class UpdateValues(val updatedValues: Pair<String, List<List<String>>>): MainScreenAction
+    data class UpdateValues(val type: String, val rowIndex: Int, val columnIndex: Int, val newValue: String): MainScreenAction
 }
 
 data class MainScreenUIState(
@@ -52,7 +52,7 @@ sealed interface MainScreenState {
 }
 
 class MainScreenViewModel(
-    private val repository: DatabaseRepository
+    private val repository: DatabaseRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MainScreenUIState.default)
@@ -126,14 +126,19 @@ class MainScreenViewModel(
                 startCollectDatabase()
             }
 
-            is MainScreenAction.UpdateValues ->{
-                _state.update {
-                    it.copy(
-
-                    )
-                }
+            is MainScreenAction.UpdateValues -> {
+                updateValues(action.type, action.rowIndex, action.columnIndex, action.newValue)
             }
         }
+    }
+
+    private fun updateValues(
+        type: String,
+        rowIndex: Int,
+        columnIndex: Int,
+        newValue: String
+    ) = viewModelScope.launch {
+        repository.updateValues(type, rowIndex, columnIndex, newValue)
     }
 
     private var getTableInfoJob: Job? = null

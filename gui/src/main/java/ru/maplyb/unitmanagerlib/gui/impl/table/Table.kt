@@ -45,7 +45,11 @@ internal fun Table(
     selectMode: Boolean,
     selectItem: (RowIndex) -> Unit,
     selectedValues: List<RowIndex>,
-    updateValues: (List<List<String>>) -> Unit,
+    updateValues: (
+        rowIndex: Int,
+        columnIndex: Int,
+        newValue: String
+    ) -> Unit,
 ) {
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
@@ -145,11 +149,9 @@ internal fun Table(
                                                         },
                                                         confirm = {
                                                             updateValues(
-                                                                values.copyMap(
-                                                                    it,
-                                                                    valuesIndex,
-                                                                    thisCurrentValueIndex
-                                                                )
+                                                                thisCurrentValueIndex,
+                                                                valuesIndex,
+                                                                it
                                                             )
                                                             editDialogState =
                                                                 editDialogState.copy(visibility = false)
@@ -162,11 +164,13 @@ internal fun Table(
                                             )
                                             .wrapContentHeight()
                                             .fillMaxWidth()
-                                            .then(if (selectedValues.contains(valuesIndex)) {
-                                                Modifier.background(Color.Green)
-                                            } else {
-                                                Modifier
-                                            })
+                                            .then(
+                                                if (selectedValues.contains(valuesIndex)) {
+                                                    Modifier.background(Color.Green)
+                                                } else {
+                                                    Modifier
+                                                }
+                                            )
                                             .border(1.dp, PrintMapColorSchema.colors.textColor)
                                             .padding(horizontal = 8.dp, vertical = 4.dp),
                                     )
@@ -200,11 +204,9 @@ internal fun Table(
                                                 },
                                                 confirm = {
                                                     updateValues(
-                                                        values.copyMap(
-                                                            it,
-                                                            index,
-                                                            thisCurrentValueIndex
-                                                        )
+                                                        thisCurrentValueIndex,
+                                                        index,
+                                                        it
                                                     )
                                                     editDialogState =
                                                         editDialogState.copy(visibility = false)
@@ -217,11 +219,13 @@ internal fun Table(
                                     )
                                     .wrapContentHeight()
                                     .fillMaxWidth()
-                                    .then(if (selectedValues.contains(index)) {
-                                        Modifier.background(Color.Green)
-                                    } else {
-                                        Modifier
-                                    })
+                                    .then(
+                                        if (selectedValues.contains(index)) {
+                                            Modifier.background(Color.Green)
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
                                     .border(1.dp, PrintMapColorSchema.colors.textColor)
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                             )
