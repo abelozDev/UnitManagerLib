@@ -10,12 +10,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -44,9 +49,6 @@ internal class UnitManagerImpl : UnitManager {
 
     @Composable
     override fun TableHandler() {
-        var tableInfo by remember {
-            mutableStateOf<FileParsingResult?>(null)
-        }
         var tableName by remember {
             mutableStateOf<String?>(null)
         }
@@ -127,21 +129,30 @@ internal class UnitManagerImpl : UnitManager {
 
     @Composable
     private fun Show(tableName: String) {
-        var result by remember {
-            mutableStateOf<FileParsingResult?>(null)
+        val mainViewModelStore = remember { ViewModelStore() }
+        val mainViewModelStoreOwner = remember {
+            object : ViewModelStoreOwner {
+                override val viewModelStore: ViewModelStore
+                    get() = mainViewModelStore
+            }
+        }
+        val viewModel = ViewModelProvider(
+            owner = mainViewModelStoreOwner,
+            factory = MainScreenViewModel.create(activity!!)
+        )[MainScreenViewModel::class.java]
+        val state by viewModel.state.collectAsState()
+        DisposableEffect(Unit) {
+            onDispose {
+                mainViewModelStore.clear()
+            }
         }
         LaunchedEffect(tableName) {
-            repository.getTableInfoFlow(tableName)
-                .onEach {
-                    result = it?.toUI()
-                }
-                .launchIn(this)
+            viewModel.onAction(MainScreenAction.SetTableName(tableName))
         }
-        LaunchedEffect(result) {
-            println("result updated")
-        }
-        if (result != null) {
-            ShowImpl(result!!)
+        if (state.fileInfo != null) {
+            ShowImpl(state) { action ->
+                viewModel.onAction(action)
+            }
         }
     }
 
@@ -159,9 +170,12 @@ internal class UnitManagerImpl : UnitManager {
 
     @Composable
     private fun ShowImpl(
-        parsedFile: FileParsingResult
+        uiState: MainScreenUIState,
+        onAction: (MainScreenAction) -> Unit
     ) {
-        val scope = rememberCoroutineScope()
+        require(uiState.fileInfo != null) {
+            "file info must not be null"
+        }
         var sharedData by remember {
             mutableStateOf<List<String>>(emptyList())
         }
@@ -177,36 +191,20 @@ internal class UnitManagerImpl : UnitManager {
                 }
             }
         MainScreen(
-            headersData = parsedFile.headers,
-            values = parsedFile.values,
+            uiState = uiState,
+            onAction = onAction,
             share = {
                 sharedData = it
                 launcher.launch(null)
             },
             addItem = { type ->
-                scope.launch {
-                    repository.addNewItem(
-                        type = type,
-                        tableName = parsedFile.tableName
-                    )
-                }
+                onAction(MainScreenAction.AddItem(type))
             },
-            moveItem = { header, items ->
-                scope.launch {
-                    repository.moveItems(
-                        type = header,
-                        tableName = parsedFile.tableName,
-                        items = items
-                    )
-                }
+            moveItem = { type, items ->
+                onAction(MainScreenAction.MoveItems(type))
             },
             deleteItems = { items ->
-                scope.launch {
-                    repository.deleteItems(
-                        tableName = parsedFile.tableName,
-                        items = items
-                    )
-                }
+                onAction(MainScreenAction.DeleteItems())
             }
         )
     }

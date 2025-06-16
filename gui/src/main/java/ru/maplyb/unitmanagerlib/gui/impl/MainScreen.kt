@@ -60,20 +60,36 @@ import ru.maplyb.unitmanagerlib.parser.impl.convertToCsv
 
 @Composable
 fun MainScreen(
-    headersData: Map<String, List<String>>,
-    values: Map<String, List<List<String>>>,
+    uiState: MainScreenUIState,
     share: (List<String>) -> Unit,
     addItem: (type: String) -> Unit,
     moveItem: (header: String, items: List<List<String>>) -> Unit,
     deleteItems: (List<List<String>>) -> Unit,
+    onAction: (MainScreenAction) -> Unit
 ) {
-    NavigationTabExample(headersData, values, share, moveItem, addItem, deleteItems)
+    require(uiState.fileInfo != null) {
+        "file info must not be null"
+    }
+    NavigationTabExample(
+        headersData = uiState.fileInfo.headers,
+        values = uiState.fileInfo.values,
+        state = uiState.state,
+        share = share,
+        moveItem = moveItem,
+        addItem = addItem,
+        deleteItems = deleteItems,
+        selectedMap = uiState.selectedMap,
+        onAction = onAction,
+    )
 }
 
 @Composable
 fun NavigationTabExample(
     headersData: Map<String, List<String>>,
     values: Map<String, List<List<String>>>,
+    selectedMap: Map<String, List<RowIndex>>,
+    state: MainScreenState,
+    onAction: (MainScreenAction) -> Unit,
     share: (List<String>) -> Unit,
     moveItem: (header: String, items: List<List<String>>) -> Unit,
     addItem: (type: String) -> Unit,
@@ -89,18 +105,6 @@ fun NavigationTabExample(
                 startDestination
             )
         )
-    }
-    var selectMode by remember {
-        mutableStateOf(false)
-    }
-    var selectedMap by remember {
-        mutableStateOf(mapOf<String, List<RowIndex>>())
-    }
-    var showDeleteDialog by remember {
-        mutableStateOf(false)
-    }
-    var showMoveDialog by remember {
-        mutableStateOf(false)
     }
     val colors = if (!isSystemInDarkTheme()) lightColorSchema() else darkColorSchema()
     CompositionLocalProvider(LocalColorScheme provides colors) {
@@ -129,15 +133,19 @@ fun NavigationTabExample(
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = null,
-                                tint = if (selectMode) Color.Green else PrintMapColorSchema.colors.textColor
+                                tint = if (state is MainScreenState.Select) Color.Green else PrintMapColorSchema.colors.textColor
                             )
                         },
                         onClick = {
-                            selectMode = !selectMode
+                            if (state is MainScreenState.Select) {
+                                onAction(MainScreenAction.UpdateState(MainScreenState.Initial))
+                            } else {
+                                onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+                            }
                         }
                     )
                     androidx.compose.animation.AnimatedVisibility(
-                        visible = selectMode,
+                        visible = state is MainScreenState.Select,
                         enter = expandHorizontally() + fadeIn(),
                         exit = shrinkHorizontally() + fadeOut()
                     ) {
@@ -151,7 +159,7 @@ fun NavigationTabExample(
                                     )
                                 },
                                 onClick = {
-                                    showDeleteDialog = true
+                                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.DeleteDialog()))
                                 }
                             )
                             IconButton(
@@ -164,7 +172,7 @@ fun NavigationTabExample(
                                     )
                                 },
                                 onClick = {
-                                    showMoveDialog = true
+                                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.MoveDialog()))
                                 }
                             )
                         }
@@ -210,48 +218,42 @@ fun NavigationTabExample(
                     destinations = destinations,
                     headers = headersData,
                     valuesMutable = values,
-                    selectMode = selectMode,
+                    selectMode = state is MainScreenState.Select,
                     selectedMap = selectedMap,
                     updateSelectedMap = {
-                        selectedMap = it
+                        onAction(MainScreenAction.SelectItem(it))
                     },
+                    addItem = addItem,
                     updateValues = {
-                        //todo
-//                    valuesMutable = it
-                    },
-                    addItem = addItem
+
+                    }
                 )
             }
         }
-        if (showDeleteDialog) {
+        if (state is MainScreenState.Select.DeleteDialog) {
             ConfirmDialog(
                 title = "Удаление",
                 message = "Вы уверены, что хотите удалить элементы из списка?",
                 onConfirm = {
-                    //todo
                     val listToDelete = getSelectedItems(selectedMap, values)
                     deleteItems(listToDelete)
-                    selectMode = false
-                    showDeleteDialog = false
                 },
                 onDismissRequest = {
-                    showDeleteDialog = false
+                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
                 }
             )
         }
-        if (showMoveDialog) {
+        if (state is MainScreenState.Select.MoveDialog) {
             MoveDialog(
                 title = "Перемещение элементов",
                 message = "Выберите, куда переместить элементы:",
                 items = destinations,
                 onDismissRequest = {
-                    showMoveDialog = false
+                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
                 },
                 select = { header ->
                     val listToAdd = getSelectedItems(selectedMap, values)
                     moveItem(header, listToAdd)
-                    showMoveDialog = false
-                    selectMode = false
                 }
             )
         }
@@ -281,15 +283,10 @@ private fun AppNavHost(
     selectedMap: Map<String, List<RowIndex>>,
     valuesMutable: Map<String, List<List<String>>>,
     updateValues: (Map<String, List<List<String>>>) -> Unit,
-    updateSelectedMap: (Map<String, List<RowIndex>>) -> Unit,
+    updateSelectedMap: (Pair<String, RowIndex>) -> Unit,
     addItem: (type: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(selectMode) {
-        if (!selectMode) {
-            updateSelectedMap(emptyMap())
-        }
-    }
     NavHost(
         navController,
         startDestination = startDestination
@@ -308,17 +305,7 @@ private fun AppNavHost(
                         currentValues!!,
                         selectMode,
                         selectItem = {
-                            val mutableSelectedMap = selectedMap.toMutableMap()
-                            if (mutableSelectedMap[destination]?.contains(it) == true) {
-                                /*Если есть в списке - удаляем*/
-                                mutableSelectedMap[destination] =
-                                    selectedMap[destination]?.minus(it) ?: emptyList()
-                            } else {
-                                /*Если нет - добавляем*/
-                                mutableSelectedMap[destination] =
-                                    selectedMap[destination]?.plus(it) ?: listOf(it)
-                            }
-                            updateSelectedMap(mutableSelectedMap)
+                            updateSelectedMap(Pair(destination, it))
                         },
                         selectedValues = selectedMap[destination] ?: emptyList()
                     ) {
