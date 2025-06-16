@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
 import ru.maplyb.unitmanagerlib.gui.impl.domain.EditDialogState
 
 @Composable
@@ -32,11 +33,12 @@ internal fun EditDialog(
             Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White)
+                    .background(PrintMapColorSchema.colors.backgroundColor)
                     .padding(16.dp)
             ) {
                 Text(
-                    "Изменение ${editDialogState.name}"
+                    color = PrintMapColorSchema.colors.textColor,
+                    text = "Изменение ${editDialogState.name}"
                 )
                 TextField(
                     value = text,
@@ -47,6 +49,7 @@ internal fun EditDialog(
                 Button(
                     content = {
                         Text(
+                            color = PrintMapColorSchema.colors.textColor,
                             text = "Применить",
                         )
                     },

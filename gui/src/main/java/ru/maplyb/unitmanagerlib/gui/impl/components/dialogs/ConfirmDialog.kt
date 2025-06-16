@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
 
 @Composable
 internal fun ConfirmDialog(
@@ -36,15 +37,17 @@ internal fun ConfirmDialog(
             Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White)
+                    .background(PrintMapColorSchema.colors.backgroundColor)
                     .padding(16.dp)
             ) {
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = title,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = message,
                 )
                 Spacer(Modifier.height(16.dp))
@@ -53,6 +56,7 @@ internal fun ConfirmDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     Text(
+                        color = PrintMapColorSchema.colors.textColor,
                         modifier = Modifier.clickable {
                             onDismissRequest()
                         },
@@ -60,11 +64,11 @@ internal fun ConfirmDialog(
                     )
                     Spacer(Modifier.width(16.dp))
                     Text(
+                        color = PrintMapColorSchema.colors.textColor,
                         modifier = Modifier.clickable {
                             onConfirm()
                         },
                         text = confirmText,
-                        color = Color(0xff1277F3)
                     )
                 }
 

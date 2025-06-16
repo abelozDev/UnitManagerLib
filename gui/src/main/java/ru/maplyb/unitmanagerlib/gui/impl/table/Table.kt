@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
 import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
 import ru.maplyb.unitmanagerlib.core.util.copyMap
 import ru.maplyb.unitmanagerlib.core.util.getValuesByIndex
@@ -78,11 +79,12 @@ internal fun Table(
             Column(
                 modifier = Modifier
                     .width(maxWidth + (32 * (subHeaders.size + 1)).dp)
-                    .border(1.dp, Color.Black),
+                    .border(1.dp, PrintMapColorSchema.colors.textColor),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 /*Основной хедер*/
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = mainHeader,
                     style = TableTextStyle(),
                     modifier = Modifier
@@ -111,13 +113,14 @@ internal fun Table(
                             ) {
                                 /*Дочерний хедер*/
                                 Text(
+                                    color = PrintMapColorSchema.colors.textColor,
                                     text = sub,
                                     maxLines = 1,
                                     style = TableTextStyle(),
                                     modifier = Modifier
                                         .height(24.dp)
                                         .fillMaxWidth()
-                                        .border(1.dp, Color.Black)
+                                        .border(1.dp, PrintMapColorSchema.colors.textColor)
                                         .padding(horizontal = 8.dp, vertical = 4.dp),
                                 )
                                 /*Значения*/
@@ -126,6 +129,7 @@ internal fun Table(
                                         mutableStateOf(currentValuesIndex)
                                     }
                                     Text(
+                                        color = PrintMapColorSchema.colors.textColor,
                                         text = value,
                                         style = TableTextStyle(),
                                         maxLines = 1,
@@ -163,7 +167,7 @@ internal fun Table(
                                             } else {
                                                 Modifier
                                             })
-                                            .border(1.dp, Color.Black)
+                                            .border(1.dp, PrintMapColorSchema.colors.textColor)
                                             .padding(horizontal = 8.dp, vertical = 4.dp),
                                     )
                                 }
@@ -180,6 +184,7 @@ internal fun Table(
                                 mutableIntStateOf(currentValuesIndex)
                             }
                             Text(
+                                color = PrintMapColorSchema.colors.textColor,
                                 text = value,
                                 maxLines = 1,
                                 style = TableTextStyle(),
@@ -217,7 +222,7 @@ internal fun Table(
                                     } else {
                                         Modifier
                                     })
-                                    .border(1.dp, Color.Black)
+                                    .border(1.dp, PrintMapColorSchema.colors.textColor)
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                             )
                         }

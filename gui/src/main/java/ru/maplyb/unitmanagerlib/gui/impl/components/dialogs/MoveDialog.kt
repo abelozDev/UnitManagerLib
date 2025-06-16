@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
 
 @Composable
 internal fun MoveDialog(
@@ -32,15 +33,17 @@ internal fun MoveDialog(
             Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White)
+                    .background(PrintMapColorSchema.colors.backgroundColor)
                     .padding(16.dp)
             ) {
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = title,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = message
                 )
                 Spacer(Modifier.height(16.dp))
@@ -48,6 +51,7 @@ internal fun MoveDialog(
                     items(items.size) {
                         val item = items[it]
                         Text(
+                            color = PrintMapColorSchema.colors.textColor,
                             modifier = Modifier
                                 .clickable {
                                     select(item)

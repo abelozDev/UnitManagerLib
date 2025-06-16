@@ -4,10 +4,13 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,8 +24,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,6 +47,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import ru.maplyb.unitmanagerlib.core.ui_kit.LocalColorScheme
+import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
+import ru.maplyb.unitmanagerlib.core.ui_kit.darkColorSchema
+import ru.maplyb.unitmanagerlib.core.ui_kit.lightColorSchema
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.R
 import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.ConfirmDialog
@@ -92,139 +102,159 @@ fun NavigationTabExample(
     var showMoveDialog by remember {
         mutableStateOf(false)
     }
-    Scaffold(modifier = modifier) { contentPadding ->
-        Column {
-            Row(
-                horizontalArrangement = Arrangement.End
+    val colors = if (!isSystemInDarkTheme()) lightColorSchema() else darkColorSchema()
+    CompositionLocalProvider(LocalColorScheme provides colors) {
+        Scaffold(modifier = modifier.background(PrintMapColorSchema.colors.backgroundColor)) { contentPadding ->
+            Column(
+                modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor)
             ) {
-                IconButton(
-                    content = {
-                        Icon(
-                            Icons.Default.Share, null
-                        )
-                    },
-                    onClick = {
-                        val list = convertToCsv(headersData, values)
-                        share(list)
-                    }
-                )
-                IconButton(
-                    content = {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            tint = if (selectMode) Color.Green else Color.Unspecified
-                        )
-                    },
-                    onClick = {
-                        selectMode = !selectMode
-                    }
-                )
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = selectMode,
-                    enter = expandHorizontally() + fadeIn(),
-                    exit = shrinkHorizontally() + fadeOut()
+                Row(
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Row {
-                        IconButton(
-                            content = {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                showDeleteDialog = true
-                            }
-                        )
-                        IconButton(
-                            content = {
-                                Icon(
-                                    modifier = Modifier.size(20.dp),
-                                    painter = painterResource(R.drawable.ic_move),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                showMoveDialog = true
-                            }
-                        )
-                    }
-                }
-            }
-            ScrollableTabRow(
-                selectedTabIndex = selectedDestination,
-                modifier = Modifier
-                    .padding(contentPadding),
-                edgePadding = 16.dp
-            ) {
-                destinations.forEachIndexed { index, destination ->
-                    Tab(
-                        selected = selectedDestination == index,
-                        onClick = {
-                            navController.navigate(route = destination)
-                            selectedDestination = index
-                        },
-                        text = {
-                            Text(
-                                text = destination,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
+                    IconButton(
+                        content = {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                tint = PrintMapColorSchema.colors.textColor
                             )
+                        },
+                        onClick = {
+                            val list = convertToCsv(headersData, values)
+                            share(list)
                         }
                     )
+                    IconButton(
+                        content = {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = if (selectMode) Color.Green else PrintMapColorSchema.colors.textColor
+                            )
+                        },
+                        onClick = {
+                            selectMode = !selectMode
+                        }
+                    )
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = selectMode,
+                        enter = expandHorizontally() + fadeIn(),
+                        exit = shrinkHorizontally() + fadeOut()
+                    ) {
+                        Row {
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = PrintMapColorSchema.colors.textColor
+                                    )
+                                },
+                                onClick = {
+                                    showDeleteDialog = true
+                                }
+                            )
+                            IconButton(
+                                content = {
+                                    Icon(
+                                        modifier = Modifier.size(20.dp),
+                                        painter = painterResource(R.drawable.ic_move),
+                                        contentDescription = null,
+                                        tint = PrintMapColorSchema.colors.textColor
+                                    )
+                                },
+                                onClick = {
+                                    showMoveDialog = true
+                                }
+                            )
+                        }
+                    }
                 }
-            }
-            AppNavHost(
-                navController = navController,
-                startDestination = startDestination,
-                destinations = destinations,
-                headers = headersData,
-                valuesMutable = values,
-                selectMode = selectMode,
-                selectedMap = selectedMap,
-                updateSelectedMap = {
-                    selectedMap = it
-                },
-                updateValues = {
-                    //todo
+                ScrollableTabRow(
+                    selectedTabIndex = selectedDestination,
+                    modifier = Modifier
+                        .background(PrintMapColorSchema.colors.backgroundColor)
+                        .padding(contentPadding),
+                    indicator =
+                        @Composable { tabPositions ->
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(tabPositions[selectedDestination]),
+                                color = PrintMapColorSchema.colors.primary
+                            )
+                        },
+                    containerColor = PrintMapColorSchema.colors.backgroundColor,
+                    edgePadding = 16.dp
+                ) {
+                    destinations.forEachIndexed { index, destination ->
+                        Tab(
+                            selected = selectedDestination == index,
+                            modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor),
+                            onClick = {
+                                navController.navigate(route = destination)
+                                selectedDestination = index
+                            },
+                            text = {
+                                Text(
+                                    color = PrintMapColorSchema.colors.textColor,
+                                    text = destination,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        )
+                    }
+                }
+                AppNavHost(
+                    navController = navController,
+                    startDestination = startDestination,
+                    destinations = destinations,
+                    headers = headersData,
+                    valuesMutable = values,
+                    selectMode = selectMode,
+                    selectedMap = selectedMap,
+                    updateSelectedMap = {
+                        selectedMap = it
+                    },
+                    updateValues = {
+                        //todo
 //                    valuesMutable = it
+                    },
+                    addItem = addItem
+                )
+            }
+        }
+        if (showDeleteDialog) {
+            ConfirmDialog(
+                title = "Удаление",
+                message = "Вы уверены, что хотите удалить элементы из списка?",
+                onConfirm = {
+                    //todo
+                    val listToDelete = getSelectedItems(selectedMap, values)
+                    deleteItems(listToDelete)
+                    selectMode = false
+                    showDeleteDialog = false
                 },
-                addItem = addItem
+                onDismissRequest = {
+                    showDeleteDialog = false
+                }
             )
         }
-    }
-    if (showDeleteDialog) {
-        ConfirmDialog(
-            title = "Удаление",
-            message = "Вы уверены, что хотите удалить элементы из списка?",
-            onConfirm = {
-                //todo
-                val listToDelete = getSelectedItems(selectedMap, values)
-                deleteItems(listToDelete)
-                selectMode = false
-                showDeleteDialog = false
-            },
-            onDismissRequest = {
-                showDeleteDialog = false
-            }
-        )
-    }
-    if (showMoveDialog) {
-        MoveDialog(
-            title = "Перемещение элементов",
-            message = "Выберите, куда переместить элементы:",
-            items = destinations,
-            onDismissRequest = {
-                showMoveDialog = false
-            },
-            select = { header ->
-                val listToAdd = getSelectedItems(selectedMap, values)
-                moveItem(header, listToAdd)
-                showMoveDialog = false
-                selectMode = false
-            }
-        )
+        if (showMoveDialog) {
+            MoveDialog(
+                title = "Перемещение элементов",
+                message = "Выберите, куда переместить элементы:",
+                items = destinations,
+                onDismissRequest = {
+                    showMoveDialog = false
+                },
+                select = { header ->
+                    val listToAdd = getSelectedItems(selectedMap, values)
+                    moveItem(header, listToAdd)
+                    showMoveDialog = false
+                    selectMode = false
+                }
+            )
+        }
     }
 }
 
@@ -269,7 +299,10 @@ private fun AppNavHost(
                 val currentValues by remember(valuesMutable, destination) {
                     mutableStateOf(valuesMutable[destination])
                 }
-                Column {
+                Column(
+                    modifier = Modifier.fillMaxSize()
+                        .background(PrintMapColorSchema.colors.backgroundColor)
+                ) {
                     Table(
                         headers,
                         currentValues!!,
@@ -298,14 +331,6 @@ private fun AppNavHost(
                     IconButton(
                         onClick = {
                             addItem(destination)
-                            /*val newList = addItem(
-                                valuesMutable = valuesMutable,
-                                headers = headers,
-                                currentValues = currentValues,
-                                currentDestination = destination,
-                                destinations = destinations
-                            )
-                            updateValues(newList)*/
                         },
                         modifier = Modifier
                             .align(Alignment.End)
@@ -314,7 +339,8 @@ private fun AppNavHost(
                         content = {
                             Icon(
                                 Icons.Default.AddCircle,
-                                contentDescription = "Add"
+                                contentDescription = "Add",
+                                tint = PrintMapColorSchema.colors.textColor
                             )
                         }
                     )
