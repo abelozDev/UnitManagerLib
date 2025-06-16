@@ -73,6 +73,7 @@ class DatabaseRepositoryImpl(
                 it.copy(values = newValue)
             } else it
         }
+        println("updated values: $updatedValues")
         database.valueDao().insertValues(updatedValues)
     }
 
