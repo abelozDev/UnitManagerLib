@@ -1,11 +1,11 @@
 package ru.maplyb.unitmanagerlib.common.database.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import kotlinx.coroutines.flow.Flow
 import ru.maplyb.unitmanagerlib.common.database.entity.HeaderEntity
 import ru.maplyb.unitmanagerlib.common.database.entity.HeadersWithValues
 
@@ -13,6 +13,9 @@ import ru.maplyb.unitmanagerlib.common.database.entity.HeadersWithValues
 interface HeaderDao {
     @Query("SELECT * FROM HeaderEntity")
     suspend fun getAll(): List<HeaderEntity>
+
+    @Query("SELECT * FROM HeaderEntity WHERE name = :name LIMIT 1")
+    suspend fun getByTableName(name: String): HeaderEntity
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(headers: HeaderEntity)
@@ -26,4 +29,7 @@ interface HeaderDao {
     @Transaction
     @Query("SELECT * FROM HeaderEntity WHERE name = :name")
     suspend fun getHeaderWithValues(name: String): HeadersWithValues?
+
+    @Query("SELECT * FROM HeaderEntity WHERE name = :name")
+    fun getHeaderWithValuesFlow(name: String): Flow<HeadersWithValues?>
 }

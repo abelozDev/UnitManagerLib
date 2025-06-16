@@ -4,12 +4,25 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
-import ru.maplyb.unitmanagerlib.common.database.entity.HeadersWithValues
 import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 
 @Dao
 interface ValuesDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertValues(values: List<ValueEntity>)
+
+    @Query("SELECT * FROM ValueEntity WHERE headersName = :name")
+    suspend fun getAllByTableName(name: String): List<ValueEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertValue(value: ValueEntity)
+
+    @Query("SELECT * FROM ValueEntity")
+    suspend fun getAll(): List<ValueEntity>
+
+    @Query("SELECT * FROM ValueEntity WHERE type = :type")
+    suspend fun getAllByType(type: String): List<ValueEntity>
+
+    @Query("SELECT DISTINCT type FROM ValueEntity")
+    suspend fun getAllUniqueTypes(): List<String>
 }

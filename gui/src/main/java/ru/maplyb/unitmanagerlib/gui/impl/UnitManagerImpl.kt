@@ -16,6 +16,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
 import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
@@ -45,6 +47,9 @@ internal class UnitManagerImpl : UnitManager {
         var tableInfo by remember {
             mutableStateOf<FileParsingResult?>(null)
         }
+        var tableName by remember {
+            mutableStateOf<String?>(null)
+        }
         val scope = rememberCoroutineScope()
         var launchSelector by remember {
             mutableStateOf(false)
@@ -54,7 +59,7 @@ internal class UnitManagerImpl : UnitManager {
             if (existedTable == null) {
                 launchSelector = true
             } else {
-                tableInfo = existedTable.toUI()
+                tableName = existedTable.tableName
             }
         }
         if (launchSelector) {
@@ -70,17 +75,20 @@ internal class UnitManagerImpl : UnitManager {
                 }.also {
                     val parsedTable = parseLines(it)
                     scope.launch {
-                        tableInfo = repository.insertHeadersAndValues(
+                        val table = repository.insertHeadersAndValues(
                             tableName = getFileName(activity!!, uri)!!,
                             headers = parsedTable.headers,
                             values = parsedTable.values
                         ).toUI()
+                        tableName = table.tableName
                     }
                 }
                 launchSelector = false
             }
         }
-        if (tableInfo != null) Show(tableInfo!!)
+        tableName?.let {
+            Show(it)
+        }
     }
 
     @Composable
@@ -118,8 +126,23 @@ internal class UnitManagerImpl : UnitManager {
     }
 
     @Composable
-    private fun Show(result: FileParsingResult) {
-        ShowImpl(result)
+    private fun Show(tableName: String) {
+        var result by remember {
+            mutableStateOf<FileParsingResult?>(null)
+        }
+        LaunchedEffect(tableName) {
+            repository.getTableInfoFlow(tableName)
+                .onEach {
+                    result = it?.toUI()
+                }
+                .launchIn(this)
+        }
+        LaunchedEffect(result) {
+            println("result updated")
+        }
+        if (result != null) {
+            ShowImpl(result!!)
+        }
     }
 
     fun getFileName(activity: Activity, uri: Uri): String? {
@@ -138,6 +161,7 @@ internal class UnitManagerImpl : UnitManager {
     private fun ShowImpl(
         parsedFile: FileParsingResult
     ) {
+        val scope = rememberCoroutineScope()
         var sharedData by remember {
             mutableStateOf<List<String>>(emptyList())
         }
@@ -158,6 +182,14 @@ internal class UnitManagerImpl : UnitManager {
             share = {
                 sharedData = it
                 launcher.launch(null)
+            },
+            addItem = { type ->
+                scope.launch {
+                    repository.addNewItem(
+                        type = type,
+                        tableName = parsedFile.tableName
+                    )
+                }
             }
         )
     }

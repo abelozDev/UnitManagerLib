@@ -1,5 +1,6 @@
 package ru.maplyb.unitmanagerlib.common.database.domain
 
+import kotlinx.coroutines.flow.Flow
 import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
 import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDTO
 import ru.maplyb.unitmanagerlib.common.database.repository.DatabaseRepositoryImpl
@@ -10,7 +11,9 @@ interface DatabaseRepository {
         headers: Map<String, List<String>>,
         values: Map<String, List<List<String>>>
     ): FileParsingResultDTO
+    suspend fun addNewItem(type: String, tableName: String): Unit
     suspend fun getTableInfo(): FileParsingResultDTO?
+    suspend fun getTableInfoFlow(name: String): Flow<FileParsingResultDTO?>
     companion object {
         fun create(database: UnitManagerDatabase): DatabaseRepository {
             return DatabaseRepositoryImpl(database)

@@ -3,9 +3,11 @@ package ru.maplyb.unitmanagerlib.parser.impl
 import java.io.File
 import java.io.InputStream
 
+
 data class FileParsingResult(
     val headers: Map<String, List<String>>,
-    val values: Map<String, List<List<String>>>
+    val values: Map<String, List<List<String>>>,
+    val tableName: String = "",
 ) {
     fun isEmpty(): Boolean = this.headers.isEmpty() && this.values.isEmpty()
 }

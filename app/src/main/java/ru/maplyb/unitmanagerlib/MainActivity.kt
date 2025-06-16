@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.net.toFile
 import ru.maplyb.unitmanagerlib.gui.api.UnitManager
-import ru.maplyb.unitmanagerlib.gui.impl.MainScreen
 import ru.maplyb.unitmanagerlib.parser.impl.parseFile
 import java.io.BufferedReader
 import java.io.File
