@@ -11,7 +11,9 @@ interface DatabaseRepository {
         headers: Map<String, List<String>>,
         values: Map<String, List<List<String>>>
     ): FileParsingResultDTO
-    suspend fun addNewItem(type: String, tableName: String): Unit
+    suspend fun addNewItem(type: String, tableName: String)
+    suspend fun deleteItems(tableName: String, items: List<List<String>>)
+    suspend fun moveItems(type: String, tableName: String, items: List<List<String>>)
     suspend fun getTableInfo(): FileParsingResultDTO?
     suspend fun getTableInfoFlow(name: String): Flow<FileParsingResultDTO?>
     companion object {

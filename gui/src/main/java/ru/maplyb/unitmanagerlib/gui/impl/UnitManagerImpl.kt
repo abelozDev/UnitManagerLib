@@ -190,6 +190,23 @@ internal class UnitManagerImpl : UnitManager {
                         tableName = parsedFile.tableName
                     )
                 }
+            },
+            moveItem = { header, items ->
+                scope.launch {
+                    repository.moveItems(
+                        type = header,
+                        tableName = parsedFile.tableName,
+                        items = items
+                    )
+                }
+            },
+            deleteItems = { items ->
+                scope.launch {
+                    repository.deleteItems(
+                        tableName = parsedFile.tableName,
+                        items = items
+                    )
+                }
             }
         )
     }

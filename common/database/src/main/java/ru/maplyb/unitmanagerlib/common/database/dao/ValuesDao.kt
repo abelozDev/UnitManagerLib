@@ -1,6 +1,7 @@
 package ru.maplyb.unitmanagerlib.common.database.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -10,6 +11,12 @@ import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 interface ValuesDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertValues(values: List<ValueEntity>)
+
+    @Delete
+    suspend fun deleteValue(value: ValueEntity)
+
+    @Query("DELETE FROM ValueEntity WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Int>)
 
     @Query("SELECT * FROM ValueEntity WHERE headersName = :name")
     suspend fun getAllByTableName(name: String): List<ValueEntity>

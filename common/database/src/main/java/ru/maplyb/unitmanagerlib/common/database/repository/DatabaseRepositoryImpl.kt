@@ -13,7 +13,7 @@ import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 
 class DatabaseRepositoryImpl(
     private val database: UnitManagerDatabase
-): DatabaseRepository {
+) : DatabaseRepository {
 
     @Transaction
     override suspend fun insertHeadersAndValues(
@@ -44,16 +44,59 @@ class DatabaseRepositoryImpl(
         return getTableInfo()!!
     }
 
+    /*изменение индекса*/
+    @Transaction
+    override suspend fun moveItems(type: String, tableName: String, items: List<List<String>>) {
+        /*Все значения в таблице*/
+        val allValues = database.valueDao().getAllByTableName(tableName).toMutableList()
+        val allByType = database.valueDao().getAllByType(type)
+        items.forEachIndexed { itemIndex, strings ->
+            val index = allValues.map { it.values }.indexOf(strings)
+            val mutableStrings = strings.toMutableList()
+            mutableStrings[0] = ((allByType.maxBy { it.values[0] }.values[0].toIntOrNull()
+                ?: -1) + itemIndex + 1).toString()
+            if (index != -1) {
+                allValues[index] = ValueEntity(
+                    id = allValues[index].id,
+                    headersName = tableName,
+                    type = type,
+                    values = mutableStrings
+                )
+            }
+        }
+        val sorted = sortValues(allValues)
+        database.valueDao().insertValues(sorted)
+    }
+
+
+    @Transaction
+    override suspend fun deleteItems(tableName: String, items: List<List<String>>) {
+        val allValues = database.valueDao().getAllByTableName(tableName).toMutableList()
+        val filtered = allValues.filter {
+            items.contains(it.values)
+        }
+        val newValues = deleteAndGet(tableName, filtered)
+        val sorted = sortValues(newValues)
+        database.valueDao().insertValues(sorted)
+    }
+
+    @Transaction
+    private suspend fun deleteAndGet(tableName: String, deleteItems: List<ValueEntity>): List<ValueEntity> {
+        database.valueDao().deleteByIds(deleteItems.map { it.id })
+        return database.valueDao().getAllByTableName(tableName)
+    }
+
     @Transaction
     override suspend fun addNewItem(type: String, tableName: String) {
         val headersByTableName = database.headerDao().getByTableName(tableName)
         val allTypes = database.valueDao().getAllUniqueTypes()
-        val typesAfterCurrent = allTypes.subList(allTypes.indexOf(type)+1, allTypes.lastIndex)
+        val typesAfterCurrent = allTypes.subList(allTypes.indexOf(type) + 1, allTypes.lastIndex)
         val allValues = database.valueDao().getAllByTableName(tableName).toMutableList()
         val valuesByType = allValues.filter { it.type == type }.map {
             it.values
         }
-        val size = headersByTableName.value.map { it.value }.sumOf { it.size } + headersByTableName.value.size
+        val size = headersByTableName.value.map { it.value }
+            .sumOf { it.size } + headersByTableName.value.size
         /*Новое значение*/
         val newItem = MutableList(size) { "" }
         newItem[0] = ((valuesByType.lastOrNull()?.get(0)?.toInt() ?: 0) + 1).toString()
@@ -77,14 +120,20 @@ class DatabaseRepositoryImpl(
         database.valueDao().insertValues(updatedValues)
     }
 
+
+
     override suspend fun getTableInfoFlow(name: String): Flow<FileParsingResultDTO?> {
         return if (database.databaseIsNotEmpty()) {
             database.headerDao().getHeaderWithValuesFlow(name).map {
-                val values = it?.values?.groupBy {
-                    it.type
-                }?.map {
-                    it.key to it.value.map { it.values }
-                }?.toMap()
+                val values = it?.values
+                    ?.sortedBy { it.values[0].toInt() }
+                    ?.groupBy {
+                        it.type
+                    }
+                    ?.map {
+                        it.key to it.value.map { it.values }
+                    }
+                    ?.toMap()
                 FileParsingResultDTO(
                     headers = it?.header?.value!!,
                     values = values!!,
@@ -115,5 +164,33 @@ class DatabaseRepositoryImpl(
                 tableName = headersWithValues.header.name
             )
         } else null
+    }
+
+    private suspend fun sortValues(values: List<ValueEntity>): List<ValueEntity> {
+        val allUniqueTypes = database.valueDao().getAllUniqueTypes()
+        val typesMap = allUniqueTypes.withIndex().associate { it.value to it.index }
+        val changedLocalNumber = values
+            .groupBy { it.type }
+            .map { (_, value) ->
+                value.mapIndexed { index, valueEntity ->
+                    val mutableValues = valueEntity.values.toMutableList()
+                    mutableValues[1] = (index + 1).toString()
+                    valueEntity.copy(
+                        values = mutableValues
+                    )
+                }
+            }
+            .flatten()
+        return changedLocalNumber
+            .sortedBy { typesMap[it.type] }
+            .mapIndexed { index, valueEntity ->
+                val modifiedValue = valueEntity.values.toMutableList()
+                /*Обновлять индекс 1*/
+                modifiedValue[0] = (index + 1).toString()
+                valueEntity.copy(
+                    values = modifiedValue
+                )
+            }
+
     }
 }

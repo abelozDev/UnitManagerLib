@@ -54,8 +54,10 @@ fun MainScreen(
     values: Map<String, List<List<String>>>,
     share: (List<String>) -> Unit,
     addItem: (type: String) -> Unit,
+    moveItem: (header: String, items: List<List<String>>) -> Unit,
+    deleteItems: (List<List<String>>) -> Unit,
 ) {
-    NavigationTabExample(headersData, values, share, addItem)
+    NavigationTabExample(headersData, values, share, moveItem, addItem, deleteItems)
 }
 
 @Composable
@@ -63,7 +65,9 @@ fun NavigationTabExample(
     headersData: Map<String, List<String>>,
     values: Map<String, List<List<String>>>,
     share: (List<String>) -> Unit,
+    moveItem: (header: String, items: List<List<String>>) -> Unit,
     addItem: (type: String) -> Unit,
+    deleteItems: (List<List<String>>) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -196,7 +200,8 @@ fun NavigationTabExample(
             message = "Вы уверены, что хотите удалить элементы из списка?",
             onConfirm = {
                 //todo
-//                valuesMutable = deleteItems(valuesMutable, selectedMap)
+                val listToDelete = getSelectedItems(selectedMap, values)
+                deleteItems(listToDelete)
                 selectMode = false
                 showDeleteDialog = false
             },
@@ -214,17 +219,8 @@ fun NavigationTabExample(
                 showMoveDialog = false
             },
             select = { header ->
-                //todo
-                val newValues = deleteItems(values, selectedMap).toMutableMap()
-                val listToAdd = buildList {
-                    selectedMap.entries.forEach { (key, value) ->
-                        values[key]?.forEachIndexed { index, list ->
-                            if (value.contains(index)) add(list)
-                        }
-                    }
-                }
-                newValues[header] = newValues[header]?.plus(listToAdd) ?: emptyList()
-//                valuesMutable = newValues
+                val listToAdd = getSelectedItems(selectedMap, values)
+                moveItem(header, listToAdd)
                 showMoveDialog = false
                 selectMode = false
             }
@@ -232,48 +228,17 @@ fun NavigationTabExample(
     }
 }
 
-private fun deleteItems(
-    valuesMutable: Map<String, List<List<String>>>,
-    selectedMap: Map<String, List<RowIndex>>
-): Map<String, List<List<String>>> {
-    val newValues = valuesMutable.toMutableMap()
-    selectedMap.forEach { (key, value) ->
-        newValues[key].takeIf { newValues.containsKey(key)}?.let {
-            newValues[key] = it.filterIndexed { index, strings ->
-                !value.contains(index)
+private fun getSelectedItems(
+    selectedMap: Map<String, List<RowIndex>>,
+    values: Map<String, List<List<String>>>
+): List<List<String>> {
+    return buildList {
+        selectedMap.entries.forEach { (key, value) ->
+            values[key]?.forEachIndexed { index, list ->
+                if (value.contains(index)) add(list)
             }
         }
     }
-    return newValues
-}
-
-private fun addItem(
-    valuesMutable: Map<String, List<List<String>>>,
-    headers: Map<String, List<String>>,
-    currentDestination: String,
-    destinations: List<String>,
-    currentValues: List<List<String>>?
-): Map<String, List<List<String>>> {
-    val mutableMap = valuesMutable.toMutableMap()
-    val mutableDestinationMap = mutableMap[currentDestination]?.toMutableList()
-    val size = headers.values.sumOf { it.size } + headers.size
-    /*Размер списка для нового элемента*/
-    val newItem = MutableList(size) { "" }
-    /*Порядковый номер общий и в подразделении*/
-    newItem[0] = ((currentValues?.lastOrNull()?.get(0)?.toInt() ?: 0) + 1).toString()
-    newItem[1] = ((currentValues?.lastOrNull()?.get(1)?.toInt() ?: 0) + 1).toString()
-    mutableDestinationMap?.add(newItem)
-    /*Сдвиг общих порядковых номеров у следующих подразделений*/
-    for (i in destinations.indexOf(currentDestination)..destinations.lastIndex) {
-        val current = destinations[i]
-        mutableMap[current] = mutableMap[current]!!.map {
-            val mutable = it.toMutableList()
-            mutable[0] = ((it[0].toIntOrNull() ?: -1) + 1).toString()
-            mutable
-        }
-    }
-    mutableMap[currentDestination] = mutableDestinationMap!!
-    return mutableMap
 }
 
 @Composable
@@ -313,10 +278,12 @@ private fun AppNavHost(
                             val mutableSelectedMap = selectedMap.toMutableMap()
                             if (mutableSelectedMap[destination]?.contains(it) == true) {
                                 /*Если есть в списке - удаляем*/
-                                mutableSelectedMap[destination] = selectedMap[destination]?.minus(it) ?: emptyList()
+                                mutableSelectedMap[destination] =
+                                    selectedMap[destination]?.minus(it) ?: emptyList()
                             } else {
                                 /*Если нет - добавляем*/
-                                mutableSelectedMap[destination] = selectedMap[destination]?.plus(it) ?: listOf(it)
+                                mutableSelectedMap[destination] =
+                                    selectedMap[destination]?.plus(it) ?: listOf(it)
                             }
                             updateSelectedMap(mutableSelectedMap)
                         },
@@ -357,7 +324,6 @@ private fun AppNavHost(
         }
     }
 }
-
 
 
 @Preview(widthDp = 2000, showBackground = true)
@@ -425,11 +391,11 @@ private fun HeadersPreview() {
             "Фазенда"
         )
     )
-/*
-    Table(
-        headersData = headersData,
-        values = values,
-        false,
-        {}
-    )*/
+    /*
+        Table(
+            headersData = headersData,
+            values = values,
+            false,
+            {}
+        )*/
 }
