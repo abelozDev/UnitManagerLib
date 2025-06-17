@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
+    id("maven-publish")
     alias(libs.plugins.kotlin.android)
 }
 
@@ -35,7 +36,18 @@ android {
         compose = true
     }
 }
-
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            afterEvaluate {
+                from(components["release"])
+                groupId = "com.github.abelozDev"
+                artifactId = "core"
+                version = libs.versions.lib.version
+            }
+        }
+    }
+}
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

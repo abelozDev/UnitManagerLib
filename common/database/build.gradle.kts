@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    id("maven-publish")
     id("com.google.devtools.ksp") version "2.1.20-2.0.1"
 }
 
@@ -33,7 +34,18 @@ android {
         jvmTarget = "11"
     }
 }
-
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            afterEvaluate {
+                from(components["release"])
+                groupId = "com.github.abelozDev"
+                artifactId = "database"
+                version = libs.versions.lib.version
+            }
+        }
+    }
+}
 dependencies {
 
     implementation(libs.androidx.core.ktx)
