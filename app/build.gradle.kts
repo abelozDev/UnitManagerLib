@@ -43,7 +43,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":parser"))
+//    implementation("com.github.abelozDev.UnitManagerLib:gui:0.0.2")
+//    implementation(project(":parser"))
     implementation(project(":gui"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
