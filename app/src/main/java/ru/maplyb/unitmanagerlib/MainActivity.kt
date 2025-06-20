@@ -1,21 +1,20 @@
 package ru.maplyb.unitmanagerlib
 
 import android.os.Bundle
-import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import ru.maplyb.unitmanagerlib.gui.api.UnitManager
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(R.layout.activity_main), UnitManagerProvider {
 
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val unitManager = UnitManager.create()
-        unitManager.init(this)
-        setContent {
-            unitManager.TableHandler()
+    private val unitManager by lazy {
+        UnitManager.create().apply {
+            init(this@MainActivity)
         }
+    }
+
+    override fun provideUnitManager(): UnitManager {
+        return unitManager
     }
 
 }
