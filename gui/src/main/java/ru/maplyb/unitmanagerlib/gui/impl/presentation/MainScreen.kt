@@ -1,4 +1,4 @@
-package ru.maplyb.unitmanagerlib.gui.impl
+package ru.maplyb.unitmanagerlib.gui.impl.presentation
 
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -7,6 +7,7 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,7 +30,6 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,7 +59,7 @@ import ru.maplyb.unitmanagerlib.gui.impl.table.Table
 import ru.maplyb.unitmanagerlib.parser.impl.convertToCsv
 
 @Composable
-fun MainScreen(
+internal fun MainScreen(
     uiState: MainScreenUIState,
     share: (List<String>) -> Unit,
     addItem: (type: String) -> Unit,
@@ -84,7 +84,7 @@ fun MainScreen(
 }
 
 @Composable
-fun NavigationTabExample(
+internal fun NavigationTabExample(
     headersData: Map<String, List<String>>,
     values: Map<String, List<List<String>>>,
     selectedMap: Map<String, List<RowIndex>>,
@@ -224,8 +224,15 @@ fun NavigationTabExample(
                         onAction(MainScreenAction.SelectItem(it))
                     },
                     addItem = addItem,
-                    updateValues = {type, rowindex, ColumntIndex, newValue ->
-                        onAction(MainScreenAction.UpdateValues(type, rowindex, ColumntIndex, newValue))
+                    updateValues = { type, rowindex, ColumntIndex, newValue ->
+                        onAction(
+                            MainScreenAction.UpdateValues(
+                                type,
+                                rowindex,
+                                ColumntIndex,
+                                newValue
+                            )
+                        )
                     }
                 )
             }
@@ -287,7 +294,7 @@ private fun AppNavHost(
         rowIndex: Int,
         columnIndex: Int,
         newValue: String
-            ) -> Unit,
+    ) -> Unit,
     updateSelectedMap: (Pair<String, RowIndex>) -> Unit,
     addItem: (type: String) -> Unit,
     modifier: Modifier = Modifier
@@ -301,34 +308,35 @@ private fun AppNavHost(
                 val currentValues by remember(valuesMutable, destination) {
                     mutableStateOf(valuesMutable[destination])
                 }
-                Column(
+                Box(
                     modifier = Modifier.fillMaxSize()
                         .background(PrintMapColorSchema.colors.backgroundColor)
                 ) {
                     Table(
-                        headers,
-                        currentValues!!,
-                        selectMode,
+                        headersData = headers,
+                        values = currentValues!!,
+                        selectMode = selectMode,
                         selectItem = {
                             updateSelectedMap(Pair(destination, it))
                         },
-                        selectedValues = selectedMap[destination] ?: emptyList()
-                    ) { rowIndex, columnIndex, newValue ->
-                        updateValues(
-                            destination,
-                            rowIndex,
-                            columnIndex,
-                            newValue
-                        )
-                    }
+                        selectedValues = selectedMap[destination] ?: emptyList(),
+                        updateValues = { rowIndex, columnIndex, newValue ->
+                            updateValues(
+                                destination,
+                                rowIndex,
+                                columnIndex,
+                                newValue
+                            )
+                        }
+                    )
                     Spacer(Modifier.height(16.dp))
                     IconButton(
                         onClick = {
                             addItem(destination)
                         },
                         modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(end = 16.dp)
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 24.dp)
                             .size(36.dp),
                         content = {
                             Icon(

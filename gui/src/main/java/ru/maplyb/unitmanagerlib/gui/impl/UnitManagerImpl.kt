@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -21,19 +20,17 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
-import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
-import ru.maplyb.unitmanagerlib.common.database.entity.HeaderEntity
 import ru.maplyb.unitmanagerlib.gui.api.UnitManager
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toUI
-import ru.maplyb.unitmanagerlib.parser.impl.FileParsingResult
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreen
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreenAction
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreenUIState
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreenViewModel
 import ru.maplyb.unitmanagerlib.parser.impl.parseLines
 import java.io.BufferedReader
-import java.io.File
 import java.io.InputStreamReader
 
 internal class UnitManagerImpl : UnitManager {

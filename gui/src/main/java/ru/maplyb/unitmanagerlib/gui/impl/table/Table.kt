@@ -50,6 +50,7 @@ internal fun Table(
         columnIndex: Int,
         newValue: String
     ) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val horizontalScrollState = rememberScrollState()
     val verticalScrollState = rememberScrollState()
@@ -58,10 +59,11 @@ internal fun Table(
         mutableStateOf(EditDialogState.default)
     }
     Row(
-        modifier = Modifier
+        modifier = modifier
             .horizontalScroll(horizontalScrollState)
             .verticalScroll(verticalScrollState)
             .fillMaxWidth()
+            .padding(bottom = 32.dp)
     ) {
         var currentValuesIndex = 0
         headersData.forEach { (mainHeader, subHeaders) ->
@@ -75,7 +77,7 @@ internal fun Table(
             val textLayoutResult = textMeasurer.measure(
                 text = AnnotatedString(maxText),
                 style = TableTextStyle(),
-                constraints = Constraints() // без ограничений
+                constraints = Constraints()
             )
             val maxWidth = with(LocalDensity.current) {
                 textLayoutResult.size.width.toDp()

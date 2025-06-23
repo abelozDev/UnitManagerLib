@@ -1,4 +1,4 @@
-package ru.maplyb.unitmanagerlib.gui.impl
+package ru.maplyb.unitmanagerlib.gui.impl.presentation
 
 import android.app.Activity
 import androidx.lifecycle.ViewModel
@@ -17,17 +17,18 @@ import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toUI
 import ru.maplyb.unitmanagerlib.parser.impl.FileParsingResult
 
-sealed interface MainScreenAction {
+internal sealed interface MainScreenAction {
     data class SelectItem(val item: Pair<String, RowIndex>) : MainScreenAction
     class DeleteItems : MainScreenAction
     data class MoveItems(val type: String) : MainScreenAction
     data class AddItem(val type: String) : MainScreenAction
     data class UpdateState(val state: MainScreenState) : MainScreenAction
     data class SetTableName(val tableName: String) : MainScreenAction
-    data class UpdateValues(val type: String, val rowIndex: Int, val columnIndex: Int, val newValue: String): MainScreenAction
+    data class UpdateValues(val type: String, val rowIndex: Int, val columnIndex: Int, val newValue: String):
+        MainScreenAction
 }
 
-data class MainScreenUIState(
+internal data class MainScreenUIState(
     val state: MainScreenState = MainScreenState.Initial,
     val selectedMap: Map<String, List<RowIndex>>,
     val fileInfo: FileParsingResult? = null,
@@ -41,7 +42,7 @@ data class MainScreenUIState(
     }
 }
 
-sealed interface MainScreenState {
+internal sealed interface MainScreenState {
     sealed interface Select : MainScreenState {
         class Initial: Select
         class DeleteDialog : Select
@@ -51,7 +52,7 @@ sealed interface MainScreenState {
     data object Initial : MainScreenState
 }
 
-class MainScreenViewModel(
+internal class MainScreenViewModel private constructor(
     private val repository: DatabaseRepository,
 ) : ViewModel() {
 
