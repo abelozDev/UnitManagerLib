@@ -11,9 +11,18 @@ import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDT
 import ru.maplyb.unitmanagerlib.common.database.entity.HeaderEntity
 import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 
-class DatabaseRepositoryImpl(
+internal class DatabaseRepositoryImpl(
     private val database: UnitManagerDatabase
 ) : DatabaseRepository {
+
+    override fun getAllTablesNames(): Flow<List<String>> {
+        return database.headerDao().getAllFLow()
+            .map { list ->
+                list.map {
+                    it.name
+                }
+            }
+    }
 
     @Transaction
     override suspend fun insertHeadersAndValues(

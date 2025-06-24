@@ -11,7 +11,6 @@ import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 interface ValuesDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertValues(values: List<ValueEntity>)
-
     @Delete
     suspend fun deleteValue(value: ValueEntity)
 

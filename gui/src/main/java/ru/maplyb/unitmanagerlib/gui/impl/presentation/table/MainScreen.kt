@@ -1,5 +1,7 @@
-package ru.maplyb.unitmanagerlib.gui.impl.presentation
+package ru.maplyb.unitmanagerlib.gui.impl.presentation.table
 
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
@@ -39,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -106,164 +111,177 @@ internal fun NavigationTabExample(
             )
         )
     }
-    val colors = if (!isSystemInDarkTheme()) lightColorSchema() else darkColorSchema()
-    CompositionLocalProvider(LocalColorScheme provides colors) {
-        Scaffold(modifier = modifier.background(PrintMapColorSchema.colors.backgroundColor)) { contentPadding ->
-            Column(
-                modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor)
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+
+    Scaffold(modifier = modifier.background(PrintMapColorSchema.colors.backgroundColor)) { contentPadding ->
+        Column(
+            modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.End
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    IconButton(
-                        content = {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = null,
-                                tint = PrintMapColorSchema.colors.textColor
-                            )
-                        },
-                        onClick = {
-                            val list = convertToCsv(headersData, values)
-                            share(list)
-                        }
-                    )
-                    IconButton(
-                        content = {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
-                                tint = if (state is MainScreenState.Select) Color.Green else PrintMapColorSchema.colors.textColor
-                            )
-                        },
-                        onClick = {
-                            if (state is MainScreenState.Select) {
-                                onAction(MainScreenAction.UpdateState(MainScreenState.Initial))
-                            } else {
-                                onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
-                            }
-                        }
-                    )
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = state is MainScreenState.Select,
-                        enter = expandHorizontally() + fadeIn(),
-                        exit = shrinkHorizontally() + fadeOut()
-                    ) {
-                        Row {
-                            IconButton(
-                                content = {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = null,
-                                        tint = PrintMapColorSchema.colors.textColor
-                                    )
-                                },
-                                onClick = {
-                                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.DeleteDialog()))
-                                }
-                            )
-                            IconButton(
-                                content = {
-                                    Icon(
-                                        modifier = Modifier.size(20.dp),
-                                        painter = painterResource(R.drawable.ic_move),
-                                        contentDescription = null,
-                                        tint = PrintMapColorSchema.colors.textColor
-                                    )
-                                },
-                                onClick = {
-                                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.MoveDialog()))
-                                }
-                            )
-                        }
-                    }
-                }
-                ScrollableTabRow(
-                    selectedTabIndex = selectedDestination,
-                    modifier = Modifier
-                        .background(PrintMapColorSchema.colors.backgroundColor)
-                        .padding(contentPadding),
-                    indicator =
-                        @Composable { tabPositions ->
-                            TabRowDefaults.SecondaryIndicator(
-                                modifier = Modifier.tabIndicatorOffset(tabPositions[selectedDestination]),
-                                color = PrintMapColorSchema.colors.primary
-                            )
-                        },
-                    containerColor = PrintMapColorSchema.colors.backgroundColor,
-                    edgePadding = 16.dp
-                ) {
-                    destinations.forEachIndexed { index, destination ->
-                        Tab(
-                            selected = selectedDestination == index,
-                            modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor),
-                            onClick = {
-                                navController.navigate(route = destination)
-                                selectedDestination = index
-                            },
-                            text = {
-                                Text(
-                                    color = PrintMapColorSchema.colors.textColor,
-                                    text = destination,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                IconButton(
+                    content = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = PrintMapColorSchema.colors.textColor
                         )
-                    }
-                }
-                AppNavHost(
-                    navController = navController,
-                    startDestination = startDestination,
-                    destinations = destinations,
-                    headers = headersData,
-                    valuesMutable = values,
-                    selectMode = state is MainScreenState.Select,
-                    selectedMap = selectedMap,
-                    updateSelectedMap = {
-                        onAction(MainScreenAction.SelectItem(it))
                     },
-                    addItem = addItem,
-                    updateValues = { type, rowindex, ColumntIndex, newValue ->
-                        onAction(
-                            MainScreenAction.UpdateValues(
-                                type,
-                                rowindex,
-                                ColumntIndex,
-                                newValue
-                            )
-                        )
+                    onClick = {
+                        backDispatcher?.onBackPressed()
                     }
                 )
+                IconButton(
+                    content = {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = null,
+                            tint = PrintMapColorSchema.colors.textColor
+                        )
+                    },
+                    onClick = {
+                        val list = convertToCsv(headersData, values)
+                        share(list)
+                    }
+                )
+                IconButton(
+                    content = {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                            tint = if (state is MainScreenState.Select) Color.Green else PrintMapColorSchema.colors.textColor
+                        )
+                    },
+                    onClick = {
+                        if (state is MainScreenState.Select) {
+                            onAction(MainScreenAction.UpdateState(MainScreenState.Initial))
+                        } else {
+                            onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+                        }
+                    }
+                )
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = state is MainScreenState.Select,
+                    enter = expandHorizontally() + fadeIn(),
+                    exit = shrinkHorizontally() + fadeOut()
+                ) {
+                    Row {
+                        IconButton(
+                            content = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = PrintMapColorSchema.colors.textColor
+                                )
+                            },
+                            onClick = {
+                                onAction(MainScreenAction.UpdateState(MainScreenState.Select.DeleteDialog()))
+                            }
+                        )
+                        IconButton(
+                            content = {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    painter = painterResource(R.drawable.ic_move),
+                                    contentDescription = null,
+                                    tint = PrintMapColorSchema.colors.textColor
+                                )
+                            },
+                            onClick = {
+                                onAction(MainScreenAction.UpdateState(MainScreenState.Select.MoveDialog()))
+                            }
+                        )
+                    }
+                }
             }
-        }
-        if (state is MainScreenState.Select.DeleteDialog) {
-            ConfirmDialog(
-                title = "Удаление",
-                message = "Вы уверены, что хотите удалить элементы из списка?",
-                onConfirm = {
-                    val listToDelete = getSelectedItems(selectedMap, values)
-                    deleteItems(listToDelete)
+            ScrollableTabRow(
+                selectedTabIndex = selectedDestination,
+                modifier = Modifier
+                    .background(PrintMapColorSchema.colors.backgroundColor)
+                    .padding(contentPadding),
+                indicator =
+                    @Composable { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[selectedDestination]),
+                            color = PrintMapColorSchema.colors.primary
+                        )
+                    },
+                containerColor = PrintMapColorSchema.colors.backgroundColor,
+                edgePadding = 16.dp
+            ) {
+                destinations.forEachIndexed { index, destination ->
+                    Tab(
+                        selected = selectedDestination == index,
+                        modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor),
+                        onClick = {
+                            navController.navigate(route = destination) {
+                                popUpTo(0)
+                            }
+                            selectedDestination = index
+                        },
+                        text = {
+                            Text(
+                                color = PrintMapColorSchema.colors.textColor,
+                                text = destination,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    )
+                }
+            }
+            AppNavHost(
+                navController = navController,
+                startDestination = startDestination,
+                destinations = destinations,
+                headers = headersData,
+                valuesMutable = values,
+                selectMode = state is MainScreenState.Select,
+                selectedMap = selectedMap,
+                updateSelectedMap = {
+                    onAction(MainScreenAction.SelectItem(it))
                 },
-                onDismissRequest = {
-                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+                addItem = addItem,
+                updateValues = { type, rowindex, ColumntIndex, newValue ->
+                    onAction(
+                        MainScreenAction.UpdateValues(
+                            type,
+                            rowindex,
+                            ColumntIndex,
+                            newValue
+                        )
+                    )
                 }
             )
         }
-        if (state is MainScreenState.Select.MoveDialog) {
-            MoveDialog(
-                title = "Перемещение элементов",
-                message = "Выберите, куда переместить элементы:",
-                items = destinations,
-                onDismissRequest = {
-                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
-                },
-                select = { header ->
-                    val listToAdd = getSelectedItems(selectedMap, values)
-                    moveItem(header, listToAdd)
-                }
-            )
-        }
+    }
+    if (state is MainScreenState.Select.DeleteDialog) {
+        ConfirmDialog(
+            title = "Удаление",
+            message = "Вы уверены, что хотите удалить элементы из списка?",
+            onConfirm = {
+                val listToDelete = getSelectedItems(selectedMap, values)
+                deleteItems(listToDelete)
+            },
+            onDismissRequest = {
+                onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+            }
+        )
+    }
+    if (state is MainScreenState.Select.MoveDialog) {
+        MoveDialog(
+            title = "Перемещение элементов",
+            message = "Выберите, куда переместить элементы:",
+            items = destinations,
+            onDismissRequest = {
+                onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+            },
+            select = { header ->
+                val listToAdd = getSelectedItems(selectedMap, values)
+                moveItem(header, listToAdd)
+            }
+        )
     }
 }
 
@@ -300,7 +318,7 @@ private fun AppNavHost(
     modifier: Modifier = Modifier
 ) {
     NavHost(
-        navController,
+        navController = navController,
         startDestination = startDestination
     ) {
         destinations.forEach { destination ->

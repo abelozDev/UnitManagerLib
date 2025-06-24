@@ -6,9 +6,13 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -17,18 +21,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
+import ru.maplyb.unitmanagerlib.core.ui_kit.LocalColorScheme
+import ru.maplyb.unitmanagerlib.core.ui_kit.darkColorSchema
+import ru.maplyb.unitmanagerlib.core.ui_kit.lightColorSchema
 import ru.maplyb.unitmanagerlib.gui.api.UnitManager
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toUI
-import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreen
-import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreenAction
-import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreenUIState
-import ru.maplyb.unitmanagerlib.gui.impl.presentation.MainScreenViewModel
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.home.HomeScreen
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreen
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenAction
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenUIState
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenViewModel
 import ru.maplyb.unitmanagerlib.parser.impl.parseLines
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -53,12 +62,12 @@ internal class UnitManagerImpl : UnitManager {
         var launchSelector by remember {
             mutableStateOf(false)
         }
-        LaunchedEffect(Unit) {
-            val existedTable = repository.getTableInfo()
-            if (existedTable == null) {
-                launchSelector = true
+        val allTablesNames by repository.getAllTablesNames().collectAsState(emptyList())
+        BackHandler {
+            if (tableName != null) {
+                tableName = null
             } else {
-                tableName = existedTable.tableName
+                activity?.finish()
             }
         }
         if (launchSelector) {
@@ -85,8 +94,21 @@ internal class UnitManagerImpl : UnitManager {
                 launchSelector = false
             }
         }
-        tableName?.let {
-            Show(it)
+        val colors = if (!isSystemInDarkTheme()) lightColorSchema() else darkColorSchema()
+        CompositionLocalProvider(LocalColorScheme provides colors) {
+            if (tableName == null) {
+                HomeScreen(
+                    allHeaderNames = allTablesNames,
+                    selectFile = {
+                        tableName = it
+                    },
+                    openNew = {
+                        launchSelector = true
+                    }
+                )
+            } else {
+                tableName?.let { Show(it) }
+            }
         }
     }
 

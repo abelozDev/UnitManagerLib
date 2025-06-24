@@ -12,6 +12,9 @@ import ru.maplyb.unitmanagerlib.common.database.entity.HeadersWithValues
 @Dao
 interface HeaderDao {
     @Query("SELECT * FROM HeaderEntity")
+    fun getAllFLow(): Flow<List<HeaderEntity>>
+
+    @Query("SELECT * FROM HeaderEntity")
     suspend fun getAll(): List<HeaderEntity>
 
     @Query("SELECT * FROM HeaderEntity WHERE name = :name LIMIT 1")

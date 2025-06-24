@@ -1,4 +1,4 @@
-package ru.maplyb.unitmanagerlib.gui.impl.presentation
+package ru.maplyb.unitmanagerlib.gui.impl.presentation.table
 
 import android.app.Activity
 import androidx.lifecycle.ViewModel
