@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
+import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerTableHeaders
+import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerValueTypes
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDTO
 import ru.maplyb.unitmanagerlib.common.database.entity.HeaderEntity
@@ -27,6 +29,37 @@ internal class DatabaseRepositoryImpl(
     override suspend fun deleteTable(tableName: String) {
         database.headerDao().deleteHeaders(tableName)
     }
+
+    override suspend fun createNew(name: String) {
+        val modifiedName = if (!name.endsWith(".csv")) "$name.csv" else name
+        //defaultUnitManagerValueTypes
+        val emptyValues = buildList {
+            defaultUnitManagerValueTypes.forEachIndexed { valueIndex, type ->
+                val value = ValueEntity(
+                    headersName = modifiedName,
+                    type = type,
+                    values = List(
+                        defaultUnitManagerTableHeaders.keys.size
+                                + defaultUnitManagerTableHeaders.values.flatten().size
+                    ) { index ->
+                        when(index) {
+                            0 -> (valueIndex + 1).toString()
+                            1 -> 1.toString()
+                            else -> ""
+                        }
+                    }
+                )
+                add(value)
+            }
+        }
+        val entity = HeaderEntity(
+            modifiedName,
+            defaultUnitManagerTableHeaders
+        )
+        database.headerDao().insert(entity)
+        database.valueDao().insertValues(emptyValues)
+    }
+
     @Transaction
     override suspend fun insertHeadersAndValues(
         tableName: String,
@@ -93,7 +126,10 @@ internal class DatabaseRepositoryImpl(
     }
 
     @Transaction
-    private suspend fun deleteAndGet(tableName: String, deleteItems: List<ValueEntity>): List<ValueEntity> {
+    private suspend fun deleteAndGet(
+        tableName: String,
+        deleteItems: List<ValueEntity>
+    ): List<ValueEntity> {
         database.valueDao().deleteByIds(deleteItems.map { it.id })
         return database.valueDao().getAllByTableName(tableName)
     }
@@ -131,7 +167,6 @@ internal class DatabaseRepositoryImpl(
         println("updated values: $updatedValues")
         database.valueDao().insertValues(updatedValues)
     }
-
 
 
     override suspend fun getTableInfoFlow(name: String): Flow<FileParsingResultDTO?> {

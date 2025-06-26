@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModelProvider
@@ -34,6 +35,7 @@ import ru.maplyb.unitmanagerlib.core.ui_kit.lightColorSchema
 import ru.maplyb.unitmanagerlib.gui.api.UnitManager
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toUI
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.home.HomeScreen
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.home.components.CreateTableDialog
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreen
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenAction
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenUIState
@@ -60,6 +62,9 @@ internal class UnitManagerImpl : UnitManager {
         }
         val scope = rememberCoroutineScope()
         var launchSelector by remember {
+            mutableStateOf(false)
+        }
+        var showCreateDialog by rememberSaveable {
             mutableStateOf(false)
         }
         val allTablesNames by repository.getAllTablesNames().collectAsState(emptyList())
@@ -105,6 +110,9 @@ internal class UnitManagerImpl : UnitManager {
                     openNew = {
                         launchSelector = true
                     },
+                    createNew = {
+                        showCreateDialog = !showCreateDialog
+                    },
                     deleteTable = {
                         scope.launch {
                             repository.deleteTable(it)
@@ -113,6 +121,19 @@ internal class UnitManagerImpl : UnitManager {
                 )
             } else {
                 tableName?.let { Show(it) }
+            }
+            if (showCreateDialog) {
+                CreateTableDialog(
+                    onDismissRequest = {
+                        showCreateDialog = !showCreateDialog
+                    },
+                    confirm = {
+                        scope.launch {
+                            repository.createNew(it)
+                            showCreateDialog = !showCreateDialog
+                        }
+                    }
+                )
             }
         }
     }

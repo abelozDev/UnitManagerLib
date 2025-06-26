@@ -26,6 +26,7 @@ interface DatabaseRepository {
 
     fun getAllTablesNames(): Flow<List<String>>
     suspend fun deleteTable(tableName: String)
+    suspend fun createNew(name: String)
     companion object {
         fun create(database: UnitManagerDatabase): DatabaseRepository {
             return DatabaseRepositoryImpl(database)

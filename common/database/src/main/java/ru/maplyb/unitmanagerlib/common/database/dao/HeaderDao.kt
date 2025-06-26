@@ -35,4 +35,25 @@ interface HeaderDao {
 
     @Query("SELECT * FROM HeaderEntity WHERE name = :name")
     fun getHeaderWithValuesFlow(name: String): Flow<HeadersWithValues?>
+
+    companion object {
+        val defaultUnitManagerTableHeaders:Map<String, List<String>> = mapOf(
+            "№п/п" to emptyList(),
+            "№" to emptyList(),
+            "Позывной" to emptyList(),
+            "№ жетона" to emptyList(),
+            "Должность" to emptyList(),
+            "Группа" to emptyList(),
+            "Вооружение" to listOf("тип","№","тип","№"),
+            "Средства связи" to listOf("рст","телефон"),
+            "Группа крови" to emptyList(),
+            "Позиция" to emptyList(),
+        )
+        val defaultUnitManagerValueTypes = listOf(
+            "Управление взводом",
+            "1 группа штурмовиков",
+            "Артиллерия",
+            "Обеспечение"
+        )
+    }
 }
