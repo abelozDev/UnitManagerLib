@@ -11,9 +11,13 @@ import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 interface ValuesDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertValues(values: List<ValueEntity>)
+
     @Delete
     suspend fun deleteValue(value: ValueEntity)
 
+/*    @Query("DELETE FROM ValueEntity WHERE headersName = :tableName")
+    suspend fun deleteAllByTableName(tableName: String)
+            */
     @Query("DELETE FROM ValueEntity WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Int>)
 
@@ -28,6 +32,9 @@ interface ValuesDao {
 
     @Query("SELECT * FROM ValueEntity WHERE type = :type")
     suspend fun getAllByType(type: String): List<ValueEntity>
+
+    @Query("SELECT * FROM ValueEntity WHERE type = :type AND headersName = :tableName")
+    suspend fun getAllByTypeAndTableName(type: String, tableName: String): List<ValueEntity>
 
     @Query("SELECT DISTINCT type FROM ValueEntity")
     suspend fun getAllUniqueTypes(): List<String>

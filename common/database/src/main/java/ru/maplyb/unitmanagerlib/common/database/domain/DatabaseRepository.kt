@@ -16,8 +16,16 @@ interface DatabaseRepository {
     suspend fun moveItems(type: String, tableName: String, items: List<List<String>>)
     suspend fun getTableInfo(): FileParsingResultDTO?
     suspend fun getTableInfoFlow(name: String): Flow<FileParsingResultDTO?>
-    suspend fun updateValues(type: String, rowIndex: Int, columnIndex: Int, newValue: String)
+    suspend fun updateValues(
+        tableName: String,
+        type: String,
+        rowIndex: Int,
+        columnIndex: Int,
+        newValue: String,
+    )
+
     fun getAllTablesNames(): Flow<List<String>>
+    suspend fun deleteTable(tableName: String)
     companion object {
         fun create(database: UnitManagerDatabase): DatabaseRepository {
             return DatabaseRepositoryImpl(database)

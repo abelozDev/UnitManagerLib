@@ -24,6 +24,9 @@ internal class DatabaseRepositoryImpl(
             }
     }
 
+    override suspend fun deleteTable(tableName: String) {
+        database.headerDao().deleteHeaders(tableName)
+    }
     @Transaction
     override suspend fun insertHeadersAndValues(
         tableName: String,
@@ -58,7 +61,7 @@ internal class DatabaseRepositoryImpl(
     override suspend fun moveItems(type: String, tableName: String, items: List<List<String>>) {
         /*Все значения в таблице*/
         val allValues = database.valueDao().getAllByTableName(tableName).toMutableList()
-        val allByType = database.valueDao().getAllByType(type)
+        val allByType = allValues.filter { it.type == type }
         items.forEachIndexed { itemIndex, strings ->
             val index = allValues.map { it.values }.indexOf(strings)
             val mutableStrings = strings.toMutableList()
@@ -153,12 +156,13 @@ internal class DatabaseRepositoryImpl(
     }
 
     override suspend fun updateValues(
+        tableName: String,
         type: String,
         rowIndex: Int,
         columnIndex: Int,
         newValue: String,
     ) {
-        val allByType = database.valueDao().getAllByType(type)
+        val allByType = database.valueDao().getAllByTypeAndTableName(type, tableName)
         val currentValue = allByType[columnIndex]
         val mutableValues = currentValue.values.toMutableList()
         mutableValues[rowIndex] = newValue

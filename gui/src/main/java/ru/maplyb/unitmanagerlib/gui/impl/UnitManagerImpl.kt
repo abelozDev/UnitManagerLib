@@ -104,6 +104,11 @@ internal class UnitManagerImpl : UnitManager {
                     },
                     openNew = {
                         launchSelector = true
+                    },
+                    deleteTable = {
+                        scope.launch {
+                            repository.deleteTable(it)
+                        }
                     }
                 )
             } else {

@@ -2,14 +2,18 @@ package ru.maplyb.unitmanagerlib.gui.impl.presentation.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.maplyb.unitmanagerlib.core.ui_kit.DefaultVerticalSpacer
 import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
-import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
 import ru.maplyb.unitmanagerlib.core.ui_kit.unitManagerButtonColors
 
 @Composable
@@ -28,6 +31,7 @@ internal fun HomeScreen(
     allHeaderNames: List<String> = emptyList(),
     selectFile: (name: String) -> Unit = {},
     openNew: () -> Unit = {},
+    deleteTable: (name: String) -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -47,17 +51,33 @@ internal fun HomeScreen(
             )
             DefaultVerticalSpacer(8)
             allHeaderNames.forEach {
-                Text(
-                    text = it,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .clickable {
-                            selectFile(it)
+                Row(
+                    modifier = Modifier.clickable {
+                        selectFile(it)
+
+                    }
+                ) {
+                    Text(
+                        text = it,
+                        modifier = Modifier
+                            .padding(vertical = 8.dp),
+                        fontSize = 16.sp,
+                        color = PrintMapColorSchema.colors.textColor,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    IconButton(
+                        content = {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = PrintMapColorSchema.colors.textColor
+                            )
                         },
-                    fontSize = 16.sp,
-                    color = PrintMapColorSchema.colors.textColor,
-                )
+                        onClick = {
+                            deleteTable(it)
+                        }
+                    )
+                }
             }
         }
         Button(
