@@ -15,9 +15,6 @@ interface ValuesDao {
     @Delete
     suspend fun deleteValue(value: ValueEntity)
 
-/*    @Query("DELETE FROM ValueEntity WHERE headersName = :tableName")
-    suspend fun deleteAllByTableName(tableName: String)
-            */
     @Query("DELETE FROM ValueEntity WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Int>)
 

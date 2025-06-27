@@ -10,5 +10,11 @@ data class HeadersWithValues(
         parentColumn = "name",
         entityColumn = "headersName"
     )
-    val values: List<ValueEntity>
+    val values: List<ValueEntity>,
+
+    @Relation(
+        parentColumn = "name",
+        entityColumn = "tableName"
+    )
+    val valuesTypes: List<ValuesTypeEntity>
 )

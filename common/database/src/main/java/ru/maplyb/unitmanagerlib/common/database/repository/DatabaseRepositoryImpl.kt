@@ -12,6 +12,8 @@ import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDTO
 import ru.maplyb.unitmanagerlib.common.database.entity.HeaderEntity
 import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
+import ru.maplyb.unitmanagerlib.common.database.entity.ValuesTypeEntity
+import ru.maplyb.unitmanagerlib.core.util.subListExclusiveToInclusive
 
 internal class DatabaseRepositoryImpl(
     private val database: UnitManagerDatabase
@@ -32,24 +34,14 @@ internal class DatabaseRepositoryImpl(
 
     override suspend fun createNew(name: String) {
         val modifiedName = if (!name.endsWith(".csv")) "$name.csv" else name
-        //defaultUnitManagerValueTypes
-        val emptyValues = buildList {
-            defaultUnitManagerValueTypes.forEachIndexed { valueIndex, type ->
-                val value = ValueEntity(
-                    headersName = modifiedName,
-                    type = type,
-                    values = List(
-                        defaultUnitManagerTableHeaders.keys.size
-                                + defaultUnitManagerTableHeaders.values.flatten().size
-                    ) { index ->
-                        when(index) {
-                            0 -> (valueIndex + 1).toString()
-                            1 -> 1.toString()
-                            else -> ""
-                        }
-                    }
+        val valueTypesList = buildList {
+            defaultUnitManagerValueTypes.forEach {
+                add(
+                    ValuesTypeEntity(
+                        tableName = modifiedName,
+                        name = it
+                    )
                 )
-                add(value)
             }
         }
         val entity = HeaderEntity(
@@ -57,7 +49,7 @@ internal class DatabaseRepositoryImpl(
             defaultUnitManagerTableHeaders
         )
         database.headerDao().insert(entity)
-        database.valueDao().insertValues(emptyValues)
+        database.valuesTypeDao().insertTypes(valueTypesList)
     }
 
     @Transaction
@@ -72,7 +64,18 @@ internal class DatabaseRepositoryImpl(
                 value = headers
             )
         )
-        val valueEntities = buildList<ValueEntity> {
+        val types = buildList {
+            values.keys.forEach {
+                add(
+                    ValuesTypeEntity(
+                        tableName = tableName,
+                        name = it
+                    )
+                )
+            }
+        }
+        database.valuesTypeDao().insertTypes(types)
+        val valueEntities = buildList {
             values.keys.forEach { type ->
                 values[type]?.forEach {
                     add(
@@ -137,17 +140,24 @@ internal class DatabaseRepositoryImpl(
     @Transaction
     override suspend fun addNewItem(type: String, tableName: String) {
         val headersByTableName = database.headerDao().getByTableName(tableName)
-        val allTypes = database.valueDao().getAllUniqueTypes()
-        val typesAfterCurrent = allTypes.subList(allTypes.indexOf(type) + 1, allTypes.lastIndex)
+        val allTypes = database.valuesTypeDao().getAllTypeNamesByTableName(tableName)
+        val currentIndex = allTypes.indexOf(type)
+        val typesBeforeCurrent = allTypes.subList(0, currentIndex)
+
+        val typesAfterCurrent = allTypes.subListExclusiveToInclusive(currentIndex, allTypes.lastIndex)
         val allValues = database.valueDao().getAllByTableName(tableName).toMutableList()
+
+        val valuesBeforeCurrentType = allValues.filter { typesBeforeCurrent.contains(it.type) }
+
         val valuesByType = allValues.filter { it.type == type }.map {
             it.values
         }
+
         val size = headersByTableName.value.map { it.value }
             .sumOf { it.size } + headersByTableName.value.size
         /*Новое значение*/
         val newItem = MutableList(size) { "" }
-        newItem[0] = ((valuesByType.lastOrNull()?.get(0)?.toInt() ?: 0) + 1).toString()
+        newItem[0] = ((valuesByType.lastOrNull()?.get(0)?.toInt() ?: valuesBeforeCurrentType.size) + 1).toString()
         newItem[1] = ((valuesByType.lastOrNull()?.get(1)?.toInt() ?: 0) + 1).toString()
         allValues.add(
             ValueEntity(
@@ -184,7 +194,8 @@ internal class DatabaseRepositoryImpl(
                 FileParsingResultDTO(
                     headers = it?.header?.value!!,
                     values = values!!,
-                    tableName = name
+                    tableName = name,
+                    valueTypes = it.valuesTypes.map { it.name }
                 )
             }
         } else flow { emit(null) }
@@ -225,7 +236,8 @@ internal class DatabaseRepositoryImpl(
             FileParsingResultDTO(
                 headers = headersWithValues?.header?.value!!,
                 values = values,
-                tableName = headersWithValues.header.name
+                tableName = headersWithValues.header.name,
+                valueTypes = headersWithValues.valuesTypes.map { it.name }
             )
         } else null
     }

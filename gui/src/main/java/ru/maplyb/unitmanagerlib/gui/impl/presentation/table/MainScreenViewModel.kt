@@ -140,7 +140,6 @@ internal class MainScreenViewModel private constructor(
         newValue: String
     ) = viewModelScope.launch {
         repository.updateValues(_state.value.tableName, type, rowIndex, columnIndex, newValue)
-        val i = HashMap<String, String>(16, 0.75f)
     }
 
     private var getTableInfoJob: Job? = null

@@ -7,20 +7,21 @@ import java.io.InputStream
 data class FileParsingResult(
     val headers: Map<String, List<String>>,
     val values: Map<String, List<List<String>>>,
+    val valueTypes: List<String>,
     val tableName: String = "",
 ) {
     fun isEmpty(): Boolean = this.headers.isEmpty() && this.values.isEmpty()
 }
 
 fun parseLines(lines: List<String>): FileParsingResult {
-    if (lines.isEmpty()) return FileParsingResult(mapOf(), mapOf())
+    if (lines.isEmpty()) return FileParsingResult(mapOf(), mapOf(), listOf())
     require(lines.size > 2) { "Размер файла слишком маленький" }
     val headers = parseCsvHeaders(lines.take(2))
     val subHeaders = parseSubHeader(headers)
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
     println("headers: $subHeaders")
     println("values: $values")
-    return FileParsingResult(subHeaders, values)
+    return FileParsingResult(subHeaders, values, values.keys.toList())
 }
 fun parseFile(inputStream: InputStream): FileParsingResult {
     val lines = buildList {
@@ -34,7 +35,7 @@ fun parseFile(inputStream: InputStream): FileParsingResult {
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
     println("headers: $subHeaders")
     println("values: $values")
-    return FileParsingResult(subHeaders, values)
+    return FileParsingResult(subHeaders, values, values.keys.toList())
 }
 fun parseFile(file: File): FileParsingResult {
     val lines = file.readLines()
@@ -42,7 +43,7 @@ fun parseFile(file: File): FileParsingResult {
     val headers = parseCsvHeaders(lines.take(2))
     val subHeaders = parseSubHeader(headers)
     val values = parseValues(lines.subList(2, lines.lastIndex+1))
-    return FileParsingResult(subHeaders, values)
+    return FileParsingResult(subHeaders, values, values.keys.toList())
 }
 private fun parseValues(lines: List<String>): Map<String, List<List<String>>> {
     val splittedLines = lines.map { it.split(",") }

@@ -78,6 +78,7 @@ internal fun MainScreen(
     NavigationTabExample(
         headersData = uiState.fileInfo.headers,
         values = uiState.fileInfo.values,
+        valuesTypes = uiState.fileInfo.valueTypes,
         state = uiState.state,
         share = share,
         moveItem = moveItem,
@@ -91,6 +92,7 @@ internal fun MainScreen(
 @Composable
 internal fun NavigationTabExample(
     headersData: Map<String, List<String>>,
+    valuesTypes: List<String>,
     values: Map<String, List<List<String>>>,
     selectedMap: Map<String, List<RowIndex>>,
     state: MainScreenState,
@@ -102,11 +104,10 @@ internal fun NavigationTabExample(
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
-    val destinations = values.keys.toList()
-    val startDestination = destinations.first()
+    val startDestination = valuesTypes.first()
     var selectedDestination by rememberSaveable {
         mutableIntStateOf(
-            destinations.indexOf(
+            valuesTypes.indexOf(
                 startDestination
             )
         )
@@ -210,7 +211,7 @@ internal fun NavigationTabExample(
                 containerColor = PrintMapColorSchema.colors.backgroundColor,
                 edgePadding = 16.dp
             ) {
-                destinations.forEachIndexed { index, destination ->
+                valuesTypes.forEachIndexed { index, destination ->
                     Tab(
                         selected = selectedDestination == index,
                         modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor),
@@ -234,7 +235,7 @@ internal fun NavigationTabExample(
             AppNavHost(
                 navController = navController,
                 startDestination = startDestination,
-                destinations = destinations,
+                destinations = valuesTypes,
                 headers = headersData,
                 valuesMutable = values,
                 selectMode = state is MainScreenState.Select,
@@ -273,7 +274,7 @@ internal fun NavigationTabExample(
         MoveDialog(
             title = "Перемещение элементов",
             message = "Выберите, куда переместить элементы:",
-            items = destinations,
+            items = valuesTypes,
             onDismissRequest = {
                 onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
             },
@@ -324,7 +325,7 @@ private fun AppNavHost(
         destinations.forEach { destination ->
             composable(destination) {
                 val currentValues by remember(valuesMutable, destination) {
-                    mutableStateOf(valuesMutable[destination])
+                    mutableStateOf(valuesMutable[destination] ?: emptyList())
                 }
                 Box(
                     modifier = Modifier.fillMaxSize()
@@ -332,7 +333,7 @@ private fun AppNavHost(
                 ) {
                     Table(
                         headersData = headers,
-                        values = currentValues!!,
+                        values = currentValues,
                         selectMode = selectMode,
                         selectItem = {
                             updateSelectedMap(Pair(destination, it))
