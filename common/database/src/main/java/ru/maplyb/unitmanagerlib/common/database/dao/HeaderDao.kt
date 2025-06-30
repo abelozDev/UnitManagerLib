@@ -47,7 +47,7 @@ interface HeaderDao {
             "Вооружение" to listOf("тип","№","тип","№"),
             "Средства связи" to listOf("рст","телефон"),
             "Группа крови" to emptyList(),
-            "Позиция" to listOf("x", "y", "Название"),
+            "Позиция" to listOf("X", "Y", "Название"),
         )
         val headersSize = defaultUnitManagerTableHeaders.flatMap {
             if(it.value.isNotEmpty()) it.value

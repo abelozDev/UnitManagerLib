@@ -62,7 +62,7 @@ internal class DatabaseRepositoryImpl(
         values: Map<String, List<List<String>>>
     ): FileParsingResultDTO {
         val mutableHeaders = headers.toMutableMap()
-        val positionItems = listOf("x", "y", "Название")
+        val positionItems = listOf("X", "Y", "Название")
         mutableHeaders["Позиция"] = positionItems
         database.headerDao().insert(
             HeaderEntity(
@@ -236,8 +236,8 @@ internal class DatabaseRepositoryImpl(
         val allByType = database.valueDao().getAllByTypeAndTableName(type, tableName)
         val currentValue = allByType[rowIndex]
         val mutableValues = currentValue.values.toMutableList()
-        val xIndex = findPositionInDefaultHeaders("x").firstOrNull() ?: return
-        val yIndex = findPositionInDefaultHeaders("y").firstOrNull() ?: return
+        val xIndex = findPositionInDefaultHeaders("X").firstOrNull() ?: return
+        val yIndex = findPositionInDefaultHeaders("Y").firstOrNull() ?: return
         val nameIndex = findPositionInDefaultHeaders("Название").firstOrNull() ?: return
         val position = database.positionDao().getById(positionId) ?: error("Position with id $positionId not found")
         mutableValues[xIndex] = position.x.toString()

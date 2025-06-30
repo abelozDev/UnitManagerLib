@@ -99,13 +99,14 @@ internal fun Table(
                     fontWeight = FontWeight.Bold
                 )
                 if (subHeaders.isNotEmpty()) {
-                    val columnWidths = remember {
+                    val columnWidths = remember(values) {
                         subHeaders.mapIndexed { index, sub ->
                             val valuesAtIndex = values.getValuesByIndex(currentValuesIndex + index)
                             val allText = listOf(sub, *valuesAtIndex.toTypedArray())
                             val _maxText = allText.maxByOrNull { it.length } ?: ""
                             val measured = textMeasurer.measure(AnnotatedString(_maxText))
-                            measured.size.width
+                            println("max text: $_maxText, width: ${measured.size.width}")
+                            maxOf(measured.size.width, 40)
                         }
                     }
                     val totalWidth = columnWidths.sum()
