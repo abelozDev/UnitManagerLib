@@ -3,6 +3,7 @@ package ru.maplyb.unitmanagerlib.common.database.domain
 import kotlinx.coroutines.flow.Flow
 import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
 import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDTO
+import ru.maplyb.unitmanagerlib.common.database.domain.model.PositionDTO
 import ru.maplyb.unitmanagerlib.common.database.repository.DatabaseRepositoryImpl
 
 interface DatabaseRepository {
@@ -23,7 +24,14 @@ interface DatabaseRepository {
         columnIndex: Int,
         newValue: String,
     )
-
+    suspend fun setPosition(
+        tableName: String,
+        positionId: Int,
+        type: String,
+        rowIndex: Int,
+    )
+    suspend fun insertPositions(positions: List<PositionDTO>)
+    fun positionsFlow(): Flow<List<PositionDTO>>
     fun getAllTablesNames(): Flow<List<String>>
     suspend fun deleteTable(tableName: String)
     suspend fun createNew(name: String)

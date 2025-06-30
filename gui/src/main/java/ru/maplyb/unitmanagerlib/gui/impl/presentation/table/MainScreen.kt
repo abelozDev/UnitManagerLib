@@ -60,6 +60,8 @@ import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.R
 import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.ConfirmDialog
 import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.MoveDialog
+import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.SelectPositionDialog
+import ru.maplyb.unitmanagerlib.gui.impl.images.pinned
 import ru.maplyb.unitmanagerlib.gui.impl.table.Table
 import ru.maplyb.unitmanagerlib.parser.impl.convertToCsv
 
@@ -72,29 +74,21 @@ internal fun MainScreen(
     deleteItems: (List<List<String>>) -> Unit,
     onAction: (MainScreenAction) -> Unit
 ) {
-    require(uiState.fileInfo != null) {
-        "file info must not be null"
-    }
+
     NavigationTabExample(
-        headersData = uiState.fileInfo.headers,
-        values = uiState.fileInfo.values,
-        valuesTypes = uiState.fileInfo.valueTypes,
+        uiState = uiState,
         state = uiState.state,
         share = share,
         moveItem = moveItem,
         addItem = addItem,
         deleteItems = deleteItems,
-        selectedMap = uiState.selectedMap,
         onAction = onAction,
     )
 }
 
 @Composable
 internal fun NavigationTabExample(
-    headersData: Map<String, List<String>>,
-    valuesTypes: List<String>,
-    values: Map<String, List<List<String>>>,
-    selectedMap: Map<String, List<RowIndex>>,
+    uiState: MainScreenUIState,
     state: MainScreenState,
     onAction: (MainScreenAction) -> Unit,
     share: (List<String>) -> Unit,
@@ -103,11 +97,14 @@ internal fun NavigationTabExample(
     deleteItems: (List<List<String>>) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    require(uiState.fileInfo != null) {
+        "file info must not be null"
+    }
     val navController = rememberNavController()
-    val startDestination = valuesTypes.first()
+    val startDestination = uiState.fileInfo.valueTypes.first()
     var selectedDestination by rememberSaveable {
         mutableIntStateOf(
-            valuesTypes.indexOf(
+            uiState.fileInfo.valueTypes.indexOf(
                 startDestination
             )
         )
@@ -142,7 +139,7 @@ internal fun NavigationTabExample(
                         )
                     },
                     onClick = {
-                        val list = convertToCsv(headersData, values)
+                        val list = convertToCsv(uiState.fileInfo.headers, uiState.fileInfo.values)
                         share(list)
                     }
                 )
@@ -193,6 +190,18 @@ internal fun NavigationTabExample(
                                 onAction(MainScreenAction.UpdateState(MainScreenState.Select.MoveDialog()))
                             }
                         )
+                        IconButton(
+                            content = {
+                                Icon(
+                                    imageVector = pinned(PrintMapColorSchema.colors.textColor),
+                                    contentDescription = null,
+                                    tint = PrintMapColorSchema.colors.textColor
+                                )
+                            },
+                            onClick = {
+                                onAction(MainScreenAction.UpdateState(MainScreenState.Select.SelectPosition()))
+                            }
+                        )
                     }
                 }
             }
@@ -211,7 +220,7 @@ internal fun NavigationTabExample(
                 containerColor = PrintMapColorSchema.colors.backgroundColor,
                 edgePadding = 16.dp
             ) {
-                valuesTypes.forEachIndexed { index, destination ->
+                uiState.fileInfo.valueTypes.forEachIndexed { index, destination ->
                     Tab(
                         selected = selectedDestination == index,
                         modifier = Modifier.background(PrintMapColorSchema.colors.backgroundColor),
@@ -235,11 +244,11 @@ internal fun NavigationTabExample(
             AppNavHost(
                 navController = navController,
                 startDestination = startDestination,
-                destinations = valuesTypes,
-                headers = headersData,
-                valuesMutable = values,
+                destinations = uiState.fileInfo.valueTypes,
+                headers = uiState.fileInfo.headers,
+                valuesMutable = uiState.fileInfo.values,
                 selectMode = state is MainScreenState.Select,
-                selectedMap = selectedMap,
+                selectedMap = uiState.selectedMap,
                 updateSelectedMap = {
                     onAction(MainScreenAction.SelectItem(it))
                 },
@@ -257,33 +266,54 @@ internal fun NavigationTabExample(
             )
         }
     }
-    if (state is MainScreenState.Select.DeleteDialog) {
-        ConfirmDialog(
-            title = "Удаление",
-            message = "Вы уверены, что хотите удалить элементы из списка?",
-            onConfirm = {
-                val listToDelete = getSelectedItems(selectedMap, values)
-                deleteItems(listToDelete)
-            },
-            onDismissRequest = {
-                onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
-            }
-        )
+    when (state) {
+        is MainScreenState.Select.DeleteDialog -> {
+            ConfirmDialog(
+                title = "Удаление",
+                message = "Вы уверены, что хотите удалить элементы из списка?",
+                onConfirm = {
+                    val listToDelete =
+                        getSelectedItems(uiState.selectedMap, uiState.fileInfo.values)
+                    deleteItems(listToDelete)
+                },
+                onDismissRequest = {
+                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+                }
+            )
+        }
+
+        is MainScreenState.Select.MoveDialog -> {
+            MoveDialog(
+                title = "Перемещение элементов",
+                message = "Выберите, куда переместить элементы:",
+                items = uiState.fileInfo.valueTypes,
+                onDismissRequest = {
+                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+                },
+                select = { header ->
+                    val listToAdd = getSelectedItems(uiState.selectedMap, uiState.fileInfo.values)
+                    moveItem(header, listToAdd)
+                }
+            )
+        }
+
+        is MainScreenState.Select.SelectPosition -> {
+            SelectPositionDialog(
+                uiState.positions,
+                onDismissRequest = {
+                    onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
+                },
+                select = { position ->
+                    onAction(
+                        MainScreenAction.UpdatePosition(position)
+                    )
+                }
+            )
+        }
+
+        else -> Unit
     }
-    if (state is MainScreenState.Select.MoveDialog) {
-        MoveDialog(
-            title = "Перемещение элементов",
-            message = "Выберите, куда переместить элементы:",
-            items = valuesTypes,
-            onDismissRequest = {
-                onAction(MainScreenAction.UpdateState(MainScreenState.Select.Initial()))
-            },
-            select = { header ->
-                val listToAdd = getSelectedItems(selectedMap, values)
-                moveItem(header, listToAdd)
-            }
-        )
-    }
+
 }
 
 private fun getSelectedItems(
@@ -377,16 +407,16 @@ private fun AppNavHost(
 @Composable
 private fun HeadersPreview() {
     val headersData = mapOf(
-        "№п/п" to emptyList<String>(),
-        "№" to emptyList<String>(),
-        "Позывной" to emptyList<String>(),
-        "№ жетона" to emptyList<String>(),
-        "Должность" to emptyList<String>(),
-        "Группа" to emptyList<String>(),
+        "№п/п" to emptyList(),
+        "№" to emptyList(),
+        "Позывной" to emptyList(),
+        "№ жетона" to emptyList(),
+        "Должность" to emptyList(),
+        "Группа" to emptyList(),
         "Вооружение" to listOf("тип", "№", "тип", "№"),
         "Средства связи" to listOf("рст", "телефон"),
-        "Группа крови" to emptyList<String>(),
-        "Позиция" to emptyList<String>(),
+        "Группа крови" to emptyList(),
+        "Позиция" to emptyList(),
     )
     val values: List<List<String>> = listOf(
         listOf(

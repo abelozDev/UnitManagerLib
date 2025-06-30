@@ -2,14 +2,16 @@ package ru.maplyb.unitmanagerlib.common.database.repository
 
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerTableHeaders
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerValueTypes
+import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.findPositionInDefaultHeaders
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDTO
+import ru.maplyb.unitmanagerlib.common.database.domain.model.PositionDTO
+import ru.maplyb.unitmanagerlib.common.database.domain.model.toDTO
 import ru.maplyb.unitmanagerlib.common.database.entity.HeaderEntity
 import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 import ru.maplyb.unitmanagerlib.common.database.entity.ValuesTypeEntity
@@ -58,10 +60,13 @@ internal class DatabaseRepositoryImpl(
         headers: Map<String, List<String>>,
         values: Map<String, List<List<String>>>
     ): FileParsingResultDTO {
+        val mutableHeaders = headers.toMutableMap()
+        val positionItems = listOf("x", "y", "Название")
+        mutableHeaders["Позиция"] = positionItems
         database.headerDao().insert(
             HeaderEntity(
                 name = tableName,
-                value = headers
+                value = mutableHeaders
             )
         )
         val types = buildList {
@@ -77,12 +82,12 @@ internal class DatabaseRepositoryImpl(
         database.valuesTypeDao().insertTypes(types)
         val valueEntities = buildList {
             values.keys.forEach { type ->
-                values[type]?.forEach {
+                values[type]?.forEach { value ->
                     add(
                         ValueEntity(
                             headersName = tableName,
                             type = type,
-                            values = it
+                            values = value
                         )
                     )
                 }
@@ -216,6 +221,40 @@ internal class DatabaseRepositoryImpl(
             values = mutableValues
         )
         database.valueDao().insertValue(updated)
+    }
+
+    override suspend fun setPosition(
+        tableName: String,
+        positionId: Int,
+        type: String,
+        rowIndex: Int
+    ) {
+        val allByType = database.valueDao().getAllByTypeAndTableName(type, tableName)
+        val currentValue = allByType[rowIndex]
+        val mutableValues = currentValue.values.toMutableList()
+        val xIndex = findPositionInDefaultHeaders("x").firstOrNull() ?: return
+        val yIndex = findPositionInDefaultHeaders("y").firstOrNull() ?: return
+        val nameIndex = findPositionInDefaultHeaders("name").firstOrNull() ?: return
+        val position = database.positionDao().getById(positionId) ?: error("Position with id $positionId not found")
+        mutableValues[xIndex] = position.x.toString()
+        mutableValues[yIndex] = position.y.toString()
+        mutableValues[nameIndex] = position.name
+        val updated = currentValue.copy(
+            values = mutableValues
+        )
+        database.valueDao().insertValue(updated)
+    }
+
+    override suspend fun insertPositions(positions: List<PositionDTO>) {
+        database.positionDao().insertPositions(positions.map { it.toEntity() })
+    }
+
+    override fun positionsFlow(): Flow<List<PositionDTO>> {
+        return database.positionDao().getPositionsFlow().map { list ->
+            list.map {
+                it.toDTO()
+            }
+        }
     }
 
     override suspend fun getTableInfo(): FileParsingResultDTO? {

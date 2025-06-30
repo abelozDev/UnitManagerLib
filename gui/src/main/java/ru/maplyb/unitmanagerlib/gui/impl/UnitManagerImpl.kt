@@ -26,6 +26,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
@@ -33,6 +37,8 @@ import ru.maplyb.unitmanagerlib.core.ui_kit.LocalColorScheme
 import ru.maplyb.unitmanagerlib.core.ui_kit.darkColorSchema
 import ru.maplyb.unitmanagerlib.core.ui_kit.lightColorSchema
 import ru.maplyb.unitmanagerlib.gui.api.UnitManager
+import ru.maplyb.unitmanagerlib.gui.api.model.Position
+import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toDTO
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toUI
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.home.HomeScreen
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.home.components.CreateTableDialog
@@ -44,13 +50,15 @@ import ru.maplyb.unitmanagerlib.parser.impl.parseLines
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-internal class UnitManagerImpl : UnitManager {
+internal class UnitManagerImpl: UnitManager {
 
-    private var activity: Activity? = null
+    private var activity: Context? = null
     private lateinit var repository: DatabaseRepository
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun init(activity: Activity) {
-        this.activity = activity
+        this.activity = activity.applicationContext
         repository = DatabaseRepository.create(Database.provideDatabase(activity))
     }
 
@@ -71,8 +79,6 @@ internal class UnitManagerImpl : UnitManager {
         BackHandler {
             if (tableName != null) {
                 tableName = null
-            } else {
-                activity?.finish()
             }
         }
         if (launchSelector) {
@@ -138,6 +144,12 @@ internal class UnitManagerImpl : UnitManager {
         }
     }
 
+    override fun updatePositions(positions: List<Position>) {
+        scope.launch {
+            repository.insertPositions(positions.map { it.toDTO() })
+        }
+    }
+
     @Composable
     private fun SelectFile(
         onUriTaken: (Uri) -> Unit
@@ -183,7 +195,7 @@ internal class UnitManagerImpl : UnitManager {
         }
         val viewModel = ViewModelProvider(
             owner = mainViewModelStoreOwner,
-            factory = MainScreenViewModel.create(activity!!)
+            factory = MainScreenViewModel.create(repository)
         )[MainScreenViewModel::class.java]
         val state by viewModel.state.collectAsState()
         DisposableEffect(Unit) {
@@ -201,7 +213,7 @@ internal class UnitManagerImpl : UnitManager {
         }
     }
 
-    fun getFileName(activity: Activity, uri: Uri): String? {
+    fun getFileName(activity: Context, uri: Uri): String? {
         var name: String? = null
         val cursor = activity.contentResolver.query(uri, null, null, null, null)
         cursor?.use {

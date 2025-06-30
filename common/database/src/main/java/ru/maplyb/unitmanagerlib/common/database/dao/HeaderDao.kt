@@ -47,7 +47,7 @@ interface HeaderDao {
             "Вооружение" to listOf("тип","№","тип","№"),
             "Средства связи" to listOf("рст","телефон"),
             "Группа крови" to emptyList(),
-            "Позиция" to emptyList(),
+            "Позиция" to listOf("x", "y", "Навзание"),
         )
         val defaultUnitManagerValueTypes = listOf(
             "Управление взводом",
@@ -55,5 +55,23 @@ interface HeaderDao {
             "Артиллерия",
             "Обеспечение"
         )
+
+        fun findPositionInDefaultHeaders(value: String): List<Int> {
+            val positions = mutableListOf<Int>()
+            var currentPosition = -1
+            defaultUnitManagerTableHeaders.forEach { (key, values) ->
+                currentPosition++
+                if (key == value) {
+                    positions.add(currentPosition)
+                }
+                values.forEach { s ->
+                    currentPosition++
+                    if (s == value) {
+                        positions.add(currentPosition)
+                    }
+                }
+            }
+            return positions
+        }
     }
 }

@@ -1,6 +1,7 @@
 package ru.maplyb.unitmanagerlib.gui.impl.presentation.table
 
 import android.app.Activity
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,8 @@ import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
+import ru.maplyb.unitmanagerlib.gui.api.model.Position
+import ru.maplyb.unitmanagerlib.gui.impl.domain.PositionUI
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toUI
 import ru.maplyb.unitmanagerlib.parser.impl.FileParsingResult
 
@@ -24,19 +27,29 @@ internal sealed interface MainScreenAction {
     data class AddItem(val type: String) : MainScreenAction
     data class UpdateState(val state: MainScreenState) : MainScreenAction
     data class SetTableName(val tableName: String) : MainScreenAction
-    data class UpdateValues(val type: String, val rowIndex: Int, val columnIndex: Int, val newValue: String):
+    data class UpdatePosition(val positionUI: PositionUI) : MainScreenAction
+    data class UpdateValues(
+        val type: String,
+        val rowIndex: Int,
+        val columnIndex: Int,
+        val newValue: String
+    ) :
         MainScreenAction
 }
 
 internal data class MainScreenUIState(
-    val state: MainScreenState = MainScreenState.Initial,
+    val state: MainScreenState,
     val selectedMap: Map<String, List<RowIndex>>,
-    val fileInfo: FileParsingResult? = null,
+    val fileInfo: FileParsingResult?,
+    val positions: List<PositionUI>,
     val tableName: String
 ) {
     companion object {
         val default = MainScreenUIState(
+            state = MainScreenState.Initial,
             selectedMap = emptyMap(),
+            fileInfo = null,
+            positions = emptyList(),
             tableName = ""
         )
     }
@@ -44,9 +57,10 @@ internal data class MainScreenUIState(
 
 internal sealed interface MainScreenState {
     sealed interface Select : MainScreenState {
-        class Initial: Select
+        class Initial : Select
         class DeleteDialog : Select
         class MoveDialog : Select
+        class SelectPosition : Select
     }
 
     data object Initial : MainScreenState
@@ -58,6 +72,22 @@ internal class MainScreenViewModel private constructor(
 
     private val _state = MutableStateFlow(MainScreenUIState.default)
     val state = _state.asStateFlow()
+
+    init {
+        repository
+            .positionsFlow()
+            .onEach { list ->
+                val mapped = list.map {
+                    it.toUI()
+                }
+                _state.update {
+                    it.copy(
+                        positions = mapped
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
 
     fun onAction(action: MainScreenAction) {
         when (action) {
@@ -130,7 +160,33 @@ internal class MainScreenViewModel private constructor(
             is MainScreenAction.UpdateValues -> {
                 updateValues(action.type, action.rowIndex, action.columnIndex, action.newValue)
             }
+
+            is MainScreenAction.UpdatePosition -> {
+                _state.value.selectedMap.forEach {
+                    it.value.forEach { value ->
+                        setPosition(
+                            rowIndex = value,
+                            type = it.key,
+                            positionId = action.positionUI.id
+                        )
+                    }
+                }
+                _state.update {
+                    it.copy(
+                        state = MainScreenState.Initial,
+                        selectedMap = emptyMap()
+                    )
+                }
+            }
         }
+    }
+
+    private fun setPosition(
+        rowIndex: Int,
+        type: String,
+        positionId: Int
+    ) = viewModelScope.launch {
+        repository.setPosition(_state.value.tableName, positionId, type, rowIndex)
     }
 
     private fun updateValues(
@@ -173,7 +229,8 @@ internal class MainScreenViewModel private constructor(
         require(_state.value.fileInfo != null) {
             "file info must not be null"
         }
-        val selectedItems = getSelectedItems(_state.value.selectedMap, _state.value.fileInfo!!.values)
+        val selectedItems =
+            getSelectedItems(_state.value.selectedMap, _state.value.fileInfo!!.values)
         repository.moveItems(
             type = type,
             tableName = _state.value.tableName,
@@ -185,7 +242,8 @@ internal class MainScreenViewModel private constructor(
         require(_state.value.fileInfo != null) {
             "file info must not be null"
         }
-        val selectedItems = getSelectedItems(_state.value.selectedMap, _state.value.fileInfo!!.values)
+        val selectedItems =
+            getSelectedItems(_state.value.selectedMap, _state.value.fileInfo!!.values)
         repository.deleteItems(
             tableName = _state.value.tableName,
             items = selectedItems
@@ -206,12 +264,10 @@ internal class MainScreenViewModel private constructor(
     }
 
     companion object {
-        fun create(activity: Activity): ViewModelProvider.Factory =
+        fun create(repository: DatabaseRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(MainScreenViewModel::class.java)) {
-                        val repository =
-                            DatabaseRepository.create(Database.provideDatabase(activity))
                         @Suppress("UNCHECKED_CAST")
                         return MainScreenViewModel(repository) as T
                     }
