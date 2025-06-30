@@ -194,6 +194,7 @@ internal fun NavigationTabExample(
                             content = {
                                 Icon(
                                     imageVector = pinned(PrintMapColorSchema.colors.textColor),
+                                    modifier = Modifier.size(24.dp),
                                     contentDescription = null,
                                     tint = PrintMapColorSchema.colors.textColor
                                 )

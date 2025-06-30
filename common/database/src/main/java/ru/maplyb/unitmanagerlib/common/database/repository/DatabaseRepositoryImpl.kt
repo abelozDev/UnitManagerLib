@@ -8,6 +8,7 @@ import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerTableHeaders
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerValueTypes
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.findPositionInDefaultHeaders
+import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.headersSize
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDTO
 import ru.maplyb.unitmanagerlib.common.database.domain.model.PositionDTO
@@ -83,11 +84,14 @@ internal class DatabaseRepositoryImpl(
         val valueEntities = buildList {
             values.keys.forEach { type ->
                 values[type]?.forEach { value ->
+                    val newValue = List(headersSize) {
+                        value.getOrElse(it) {""}
+                    }
                     add(
                         ValueEntity(
                             headersName = tableName,
                             type = type,
-                            values = value
+                            values = newValue
                         )
                     )
                 }
@@ -234,7 +238,7 @@ internal class DatabaseRepositoryImpl(
         val mutableValues = currentValue.values.toMutableList()
         val xIndex = findPositionInDefaultHeaders("x").firstOrNull() ?: return
         val yIndex = findPositionInDefaultHeaders("y").firstOrNull() ?: return
-        val nameIndex = findPositionInDefaultHeaders("name").firstOrNull() ?: return
+        val nameIndex = findPositionInDefaultHeaders("Название").firstOrNull() ?: return
         val position = database.positionDao().getById(positionId) ?: error("Position with id $positionId not found")
         mutableValues[xIndex] = position.x.toString()
         mutableValues[yIndex] = position.y.toString()

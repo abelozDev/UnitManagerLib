@@ -47,8 +47,12 @@ interface HeaderDao {
             "Вооружение" to listOf("тип","№","тип","№"),
             "Средства связи" to listOf("рст","телефон"),
             "Группа крови" to emptyList(),
-            "Позиция" to listOf("x", "y", "Навзание"),
+            "Позиция" to listOf("x", "y", "Название"),
         )
+        val headersSize = defaultUnitManagerTableHeaders.flatMap {
+            if(it.value.isNotEmpty()) it.value
+            else listOf(it.key)
+        }.size
         val defaultUnitManagerValueTypes = listOf(
             "Управление взводом",
             "1 группа штурмовиков",
@@ -60,7 +64,7 @@ interface HeaderDao {
             val positions = mutableListOf<Int>()
             var currentPosition = -1
             defaultUnitManagerTableHeaders.forEach { (key, values) ->
-                currentPosition++
+                if (values.isEmpty()) currentPosition++
                 if (key == value) {
                     positions.add(currentPosition)
                 }
