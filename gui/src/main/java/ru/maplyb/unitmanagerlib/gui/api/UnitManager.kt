@@ -11,6 +11,8 @@ interface UnitManager {
 
     fun init(activity: Activity)
 
+    fun setShowOnMapClickListener(listener: ShowOnMapClickListener)
+
     @Composable
     fun TableHandler()
 

@@ -1,5 +1,6 @@
 package ru.maplyb.unitmanagerlib.gui.impl.presentation.table
 
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
+import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.findPositionInDefaultHeaders
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.api.model.Position
@@ -33,8 +35,12 @@ internal sealed interface MainScreenAction {
         val rowIndex: Int,
         val columnIndex: Int,
         val newValue: String
-    ) :
-        MainScreenAction
+    ) : MainScreenAction
+
+    data class ShowOnMapClick(
+        val type: String,
+        val index: Int
+    ) : MainScreenAction
 }
 
 internal data class MainScreenUIState(
@@ -57,6 +63,7 @@ internal data class MainScreenUIState(
 
 internal sealed interface MainScreenEffect {
     data class ShowMessage(val message: String) : MainScreenEffect
+    data class ShowOnMap(val position: Position) : MainScreenEffect
 }
 
 internal sealed interface MainScreenState {
@@ -165,6 +172,7 @@ internal class MainScreenViewModel private constructor(
                             return
                         }
                     }
+
                     MainScreenState.Initial -> Unit
                     is MainScreenState.Select.Initial -> Unit
                 }
@@ -207,7 +215,44 @@ internal class MainScreenViewModel private constructor(
                     )
                 }
             }
+
+            is MainScreenAction.ShowOnMapClick -> {
+                val item =
+                    _state.value.fileInfo?.values?.get(action.type)?.get(action.index)
+                if (item == null) {
+                    onEffect(MainScreenEffect.ShowMessage("Элемент с типом ${action.type} и индексом ${action.index} не найден"))
+                } else {
+                    onEffect(
+                        MainScreenEffect.ShowOnMap(getPosition(item))
+                    )
+                }
+
+            }
         }
+    }
+
+    private fun getPosition(
+        item: List<String>
+    ): Position {
+        val x = findPositionInDefaultHeaders("X")
+            .firstOrNull()
+            ?.let {
+                item[it]
+            }
+            ?: error("header \"X\" not found")
+        val y = findPositionInDefaultHeaders("Y")
+            .firstOrNull()
+            ?.let {
+                item[it]
+            }
+            ?: error("header \"Y\" not found")
+        val name = findPositionInDefaultHeaders("Название")
+            .firstOrNull()
+            ?.let {
+                item[it]
+            }
+            ?: error("header \"Название\" not found")
+        return Position(x.toDoubleOrNull() ?: 0.0, y.toDoubleOrNull() ?: 0.0, name)
     }
 
     private fun setPosition(

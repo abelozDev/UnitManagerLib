@@ -40,6 +40,7 @@ import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.core.ui_kit.LocalColorScheme
 import ru.maplyb.unitmanagerlib.core.ui_kit.darkColorSchema
 import ru.maplyb.unitmanagerlib.core.ui_kit.lightColorSchema
+import ru.maplyb.unitmanagerlib.gui.api.ShowOnMapClickListener
 import ru.maplyb.unitmanagerlib.gui.api.UnitManager
 import ru.maplyb.unitmanagerlib.gui.api.model.Position
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toDTO
@@ -57,11 +58,16 @@ import java.io.InputStreamReader
 
 internal class UnitManagerImpl: UnitManager {
 
+    private var showOnMapClickListener: ShowOnMapClickListener? = null
+
     private var activity: Context? = null
     private lateinit var repository: DatabaseRepository
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    override fun setShowOnMapClickListener(listener: ShowOnMapClickListener) {
+        showOnMapClickListener = listener
+    }
     override fun init(activity: Activity) {
         this.activity = activity.applicationContext
         repository = DatabaseRepository.create(Database.provideDatabase(activity))
@@ -220,6 +226,10 @@ internal class UnitManagerImpl: UnitManager {
                         is MainScreenEffect.ShowMessage -> {
                             Toast.makeText(context, it.message, Toast.LENGTH_LONG).show()
                         }
+
+                        is MainScreenEffect.ShowOnMap -> {
+                            showOnMapClickListener?.onClick(it.position)
+                        }
                     }
 
                 }
@@ -281,6 +291,9 @@ internal class UnitManagerImpl: UnitManager {
             },
             deleteItems = { items ->
                 onAction(MainScreenAction.DeleteItems())
+            },
+            showOnMap = { type, index ->
+                onAction(MainScreenAction.ShowOnMapClick(type, index))
             }
         )
     }

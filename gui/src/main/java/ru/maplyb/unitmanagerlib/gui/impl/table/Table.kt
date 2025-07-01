@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.headerNoClickingPossible
 import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
 import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
-import ru.maplyb.unitmanagerlib.core.util.copyMap
 import ru.maplyb.unitmanagerlib.core.util.getValuesByIndex
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.impl.components.dialogs.EditDialog
@@ -51,6 +50,7 @@ internal fun Table(
         columnIndex: Int,
         newValue: String
     ) -> Unit = {_,_,_ -> },
+    showOnMap: (columnIndex: Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val horizontalScrollState = rememberScrollState()
@@ -144,7 +144,9 @@ internal fun Table(
                                         modifier = Modifier
                                             .combinedClickable(
                                                 onLongClick = {
-                                                    if (headerNoClickingPossible.contains(mainHeader)) return@combinedClickable
+                                                    if (headerNoClickingPossible.contains(mainHeader)) {
+                                                        return@combinedClickable
+                                                    }
                                                     editDialogState = EditDialogState(
                                                         name = value,
                                                         visibility = true,
@@ -164,7 +166,11 @@ internal fun Table(
                                                     )
                                                 },
                                                 onClick = {
-                                                    if (selectMode) selectItem(valuesIndex)
+                                                    if (selectMode) {
+                                                        selectItem(valuesIndex)
+                                                    } else {
+                                                        showOnMap(valuesIndex)
+                                                    }
                                                 }
                                             )
                                             .wrapContentHeight()
@@ -200,7 +206,9 @@ internal fun Table(
                                 modifier = Modifier
                                     .combinedClickable(
                                         onLongClick = {
-                                            if (headerNoClickingPossible.contains(mainHeader)) return@combinedClickable
+                                            if (headerNoClickingPossible.contains(mainHeader)) {
+                                                return@combinedClickable
+                                            }
                                             editDialogState = EditDialogState(
                                                 name = value,
                                                 visibility = true,
@@ -220,7 +228,11 @@ internal fun Table(
                                             )
                                         },
                                         onClick = {
-                                            if (selectMode) selectItem(index)
+                                            if (selectMode) {
+                                                selectItem(index)
+                                            } else {
+                                                showOnMap(index)
+                                            }
                                         }
                                     )
                                     .wrapContentHeight()

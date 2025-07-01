@@ -73,7 +73,8 @@ internal fun MainScreen(
     addItem: (type: String) -> Unit,
     moveItem: (header: String, items: List<List<String>>) -> Unit,
     deleteItems: (List<List<String>>) -> Unit,
-    onAction: (MainScreenAction) -> Unit
+    onAction: (MainScreenAction) -> Unit,
+    showOnMap: (String, Int) -> Unit,
 ) {
 
     NavigationTabExample(
@@ -84,6 +85,7 @@ internal fun MainScreen(
         addItem = addItem,
         deleteItems = deleteItems,
         onAction = onAction,
+        showOnMap = showOnMap,
     )
 }
 
@@ -96,6 +98,7 @@ internal fun NavigationTabExample(
     moveItem: (header: String, items: List<List<String>>) -> Unit,
     addItem: (type: String) -> Unit,
     deleteItems: (List<List<String>>) -> Unit,
+    showOnMap: (String, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     require(uiState.fileInfo != null) {
@@ -264,7 +267,8 @@ internal fun NavigationTabExample(
                             newValue
                         )
                     )
-                }
+                },
+                showOnMap = showOnMap
             )
         }
     }
@@ -348,6 +352,7 @@ private fun AppNavHost(
     ) -> Unit,
     updateSelectedMap: (Pair<String, RowIndex>) -> Unit,
     addItem: (type: String) -> Unit,
+    showOnMap: (String, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -378,6 +383,9 @@ private fun AppNavHost(
                                 columnIndex,
                                 newValue
                             )
+                        },
+                        showOnMap = {
+                            showOnMap(destination, it)
                         }
                     )
                     Spacer(Modifier.height(16.dp))
