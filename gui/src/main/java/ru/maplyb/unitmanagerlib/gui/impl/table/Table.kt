@@ -42,14 +42,14 @@ import ru.maplyb.unitmanagerlib.gui.impl.domain.EditDialogState
 internal fun Table(
     headersData: Map<String, List<String>>,
     values: List<List<String>>,
-    selectMode: Boolean,
-    selectItem: (RowIndex) -> Unit,
-    selectedValues: List<RowIndex>,
+    selectMode: Boolean = false,
+    selectItem: (RowIndex) -> Unit = {},
+    selectedValues: List<RowIndex> = emptyList(),
     updateValues: (
         rowIndex: Int,
         columnIndex: Int,
         newValue: String
-    ) -> Unit,
+    ) -> Unit = {_,_,_ -> },
     modifier: Modifier = Modifier,
 ) {
     val horizontalScrollState = rememberScrollState()

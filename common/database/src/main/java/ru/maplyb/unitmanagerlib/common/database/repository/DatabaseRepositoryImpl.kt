@@ -236,9 +236,9 @@ internal class DatabaseRepositoryImpl(
         val allByType = database.valueDao().getAllByTypeAndTableName(type, tableName)
         val currentValue = allByType[rowIndex]
         val mutableValues = currentValue.values.toMutableList()
-        val xIndex = findPositionInDefaultHeaders("X").firstOrNull() ?: return
-        val yIndex = findPositionInDefaultHeaders("Y").firstOrNull() ?: return
-        val nameIndex = findPositionInDefaultHeaders("Название").firstOrNull() ?: return
+        val xIndex = findPositionInDefaultHeaders("X").firstOrNull() ?: error("header \"X\" not found")
+        val yIndex = findPositionInDefaultHeaders("Y").firstOrNull() ?: error("header \"Y\" not found")
+        val nameIndex = findPositionInDefaultHeaders("Название").firstOrNull() ?: error("header \"Название\" not found")
         val position = database.positionDao().getById(positionId) ?: error("Position with id $positionId not found")
         mutableValues[xIndex] = position.x.toString()
         mutableValues[yIndex] = position.y.toString()

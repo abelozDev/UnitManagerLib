@@ -52,6 +52,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerTableHeaders
 import ru.maplyb.unitmanagerlib.core.ui_kit.LocalColorScheme
 import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
 import ru.maplyb.unitmanagerlib.core.ui_kit.darkColorSchema
@@ -469,11 +470,10 @@ private fun HeadersPreview() {
             "Фазенда"
         )
     )
-    /*
         Table(
-            headersData = headersData,
+            headersData = defaultUnitManagerTableHeaders,
             values = values,
             false,
             {}
-        )*/
+        )
 }
