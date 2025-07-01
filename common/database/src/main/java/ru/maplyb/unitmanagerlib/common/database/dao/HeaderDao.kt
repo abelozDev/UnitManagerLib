@@ -49,6 +49,7 @@ interface HeaderDao {
             "Группа крови" to emptyList(),
             "Позиция" to listOf("X", "Y", "Название"),
         )
+        val headerNoClickingPossible = listOf("Позиция")
         val headersSize = defaultUnitManagerTableHeaders.flatMap {
             if(it.value.isNotEmpty()) it.value
             else listOf(it.key)

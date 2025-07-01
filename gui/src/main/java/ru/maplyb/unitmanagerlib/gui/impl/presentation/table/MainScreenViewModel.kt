@@ -16,7 +16,7 @@ import ru.maplyb.unitmanagerlib.common.database.Database
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.api.model.Position
-import ru.maplyb.unitmanagerlib.gui.impl.domain.PositionUI
+import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toDTO
 import ru.maplyb.unitmanagerlib.gui.impl.domain.mapper.toUI
 import ru.maplyb.unitmanagerlib.parser.impl.FileParsingResult
 
@@ -27,7 +27,7 @@ internal sealed interface MainScreenAction {
     data class AddItem(val type: String) : MainScreenAction
     data class UpdateState(val state: MainScreenState) : MainScreenAction
     data class SetTableName(val tableName: String) : MainScreenAction
-    data class UpdatePosition(val positionUI: PositionUI) : MainScreenAction
+    data class UpdatePosition(val positionUI: Position) : MainScreenAction
     data class UpdateValues(
         val type: String,
         val rowIndex: Int,
@@ -41,7 +41,7 @@ internal data class MainScreenUIState(
     val state: MainScreenState,
     val selectedMap: Map<String, List<RowIndex>>,
     val fileInfo: FileParsingResult?,
-    val positions: List<PositionUI>,
+    val positions: List<Position>,
     val tableName: String
 ) {
     companion object {
@@ -167,7 +167,7 @@ internal class MainScreenViewModel private constructor(
                         setPosition(
                             rowIndex = value,
                             type = it.key,
-                            positionId = action.positionUI.id
+                            position = action.positionUI
                         )
                     }
                 }
@@ -184,9 +184,9 @@ internal class MainScreenViewModel private constructor(
     private fun setPosition(
         rowIndex: Int,
         type: String,
-        positionId: Int
+        position: Position
     ) = viewModelScope.launch {
-        repository.setPosition(_state.value.tableName, positionId, type, rowIndex)
+        repository.setPosition(_state.value.tableName, position.toDTO(), type, rowIndex)
     }
 
     private fun updateValues(

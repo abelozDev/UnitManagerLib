@@ -21,13 +21,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import ru.maplyb.unitmanagerlib.core.ui_kit.DefaultVerticalSpacer
 import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
-import ru.maplyb.unitmanagerlib.gui.impl.domain.PositionUI
+import ru.maplyb.unitmanagerlib.gui.api.model.Position
 
 @Composable
 internal fun SelectPositionDialog(
-    positions: List<PositionUI>,
+    positions: List<Position>,
     onDismissRequest: () -> Unit = {},
-    select: (PositionUI) -> Unit = {}
+    select: (Position) -> Unit = {}
 ) {
     var input by rememberSaveable {
         mutableStateOf("")
@@ -71,13 +71,13 @@ internal fun SelectPositionDialog(
     )
 }
 
-private fun filterPositions(positions: List<PositionUI>, input: String): List<PositionUI> {
+private fun filterPositions(positions: List<Position>, input: String): List<Position> {
     val query = input.trim()
     return positions.filter { it.name.contains(query, ignoreCase = true) }
 }
 
 @Composable
-private fun PositionItem(position: PositionUI, onClick: () -> Unit) {
+private fun PositionItem(position: Position, onClick: () -> Unit) {
     Text(
         modifier = Modifier
             .clickable {
@@ -93,7 +93,7 @@ private fun PositionItem(position: PositionUI, onClick: () -> Unit) {
 @Composable
 private fun PreviewSelectPositionDialog() {
     val positionsList = List(10) {
-        PositionUI(
+        Position(
             x = 0.0,
             y = 0.0,
             name = "test"

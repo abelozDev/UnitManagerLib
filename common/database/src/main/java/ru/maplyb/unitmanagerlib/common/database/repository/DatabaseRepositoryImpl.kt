@@ -229,7 +229,7 @@ internal class DatabaseRepositoryImpl(
 
     override suspend fun setPosition(
         tableName: String,
-        positionId: Int,
+        position: PositionDTO,
         type: String,
         rowIndex: Int
     ) {
@@ -239,7 +239,6 @@ internal class DatabaseRepositoryImpl(
         val xIndex = findPositionInDefaultHeaders("X").firstOrNull() ?: error("header \"X\" not found")
         val yIndex = findPositionInDefaultHeaders("Y").firstOrNull() ?: error("header \"Y\" not found")
         val nameIndex = findPositionInDefaultHeaders("Название").firstOrNull() ?: error("header \"Название\" not found")
-        val position = database.positionDao().getById(positionId) ?: error("Position with id $positionId not found")
         mutableValues[xIndex] = position.x.toString()
         mutableValues[yIndex] = position.y.toString()
         mutableValues[nameIndex] = position.name

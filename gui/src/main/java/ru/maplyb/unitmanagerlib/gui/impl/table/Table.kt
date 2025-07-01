@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.headerNoClickingPossible
 import ru.maplyb.unitmanagerlib.core.ui_kit.PrintMapColorSchema
 import ru.maplyb.unitmanagerlib.core.ui_kit.TableTextStyle
 import ru.maplyb.unitmanagerlib.core.util.copyMap
@@ -106,7 +107,7 @@ internal fun Table(
                             val _maxText = allText.maxByOrNull { it.length } ?: ""
                             val measured = textMeasurer.measure(AnnotatedString(_maxText))
                             println("max text: $_maxText, width: ${measured.size.width}")
-                            maxOf(measured.size.width, 40)
+                            maxOf(measured.size.width, 70)
                         }
                     }
                     val totalWidth = columnWidths.sum()
@@ -143,6 +144,7 @@ internal fun Table(
                                         modifier = Modifier
                                             .combinedClickable(
                                                 onLongClick = {
+                                                    if (headerNoClickingPossible.contains(mainHeader)) return@combinedClickable
                                                     editDialogState = EditDialogState(
                                                         name = value,
                                                         visibility = true,
@@ -198,6 +200,7 @@ internal fun Table(
                                 modifier = Modifier
                                     .combinedClickable(
                                         onLongClick = {
+                                            if (headerNoClickingPossible.contains(mainHeader)) return@combinedClickable
                                             editDialogState = EditDialogState(
                                                 name = value,
                                                 visibility = true,

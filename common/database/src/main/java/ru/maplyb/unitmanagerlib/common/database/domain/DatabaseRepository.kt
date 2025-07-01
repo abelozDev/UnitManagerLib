@@ -26,7 +26,7 @@ interface DatabaseRepository {
     )
     suspend fun setPosition(
         tableName: String,
-        positionId: Int,
+        position: PositionDTO,
         type: String,
         rowIndex: Int,
     )

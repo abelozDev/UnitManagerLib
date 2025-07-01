@@ -13,9 +13,6 @@ interface PositionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPositions(positions: List<PositionEntity>)
 
-    @Query("SELECT * FROM PositionEntity WHERE id = :id LIMIT 1")
-    suspend fun getById(id: Int): PositionEntity?
-
     @Query("SELECT * FROM PositionEntity")
     fun getPositionsFlow(): Flow<List<PositionEntity>>
 
