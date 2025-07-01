@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 
 @Dao
@@ -20,6 +21,9 @@ interface ValuesDao {
 
     @Query("SELECT * FROM ValueEntity WHERE headersName = :name")
     suspend fun getAllByTableName(name: String): List<ValueEntity>
+
+    @Query("SELECT * FROM ValueEntity WHERE headersName = :name")
+    fun getAllByTableNameFlow(name: String): Flow<List<ValueEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertValue(value: ValueEntity)

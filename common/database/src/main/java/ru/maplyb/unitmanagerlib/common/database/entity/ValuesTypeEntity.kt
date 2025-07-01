@@ -16,5 +16,6 @@ import androidx.room.ForeignKey
 )
 data class ValuesTypeEntity(
     val tableName: String,
-    val name: String
+    val name: String,
+    val orderIndex: Int
 )

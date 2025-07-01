@@ -177,7 +177,7 @@ internal fun HomeScreen(
 }
 
 private enum class FabActions(val description: String) {
-    OPEN("Открыть новый файл"), CREATE("Создать новый файл")
+    OPEN("Открыть файл"), CREATE("Создать файл")
 }
 
 @Preview

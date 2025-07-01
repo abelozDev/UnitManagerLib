@@ -2,6 +2,7 @@ package ru.maplyb.unitmanagerlib.common.database.repository
 
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import ru.maplyb.unitmanagerlib.common.database.UnitManagerDatabase
@@ -14,6 +15,7 @@ import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDT
 import ru.maplyb.unitmanagerlib.common.database.domain.model.PositionDTO
 import ru.maplyb.unitmanagerlib.common.database.domain.model.toDTO
 import ru.maplyb.unitmanagerlib.common.database.entity.HeaderEntity
+import ru.maplyb.unitmanagerlib.common.database.entity.HeadersWithValues
 import ru.maplyb.unitmanagerlib.common.database.entity.ValueEntity
 import ru.maplyb.unitmanagerlib.common.database.entity.ValuesTypeEntity
 import ru.maplyb.unitmanagerlib.core.util.subListExclusiveToInclusive
@@ -38,11 +40,12 @@ internal class DatabaseRepositoryImpl(
     override suspend fun createNew(name: String) {
         val modifiedName = if (!name.endsWith(".csv")) "$name.csv" else name
         val valueTypesList = buildList {
-            defaultUnitManagerValueTypes.forEach {
+            defaultUnitManagerValueTypes.forEachIndexed { index, value ->
                 add(
                     ValuesTypeEntity(
                         tableName = modifiedName,
-                        name = it
+                        name = value,
+                        orderIndex = index
                     )
                 )
             }
@@ -71,11 +74,12 @@ internal class DatabaseRepositoryImpl(
             )
         )
         val types = buildList {
-            values.keys.forEach {
+            values.keys.forEachIndexed { index, s ->
                 add(
                     ValuesTypeEntity(
                         tableName = tableName,
-                        name = it
+                        name = s,
+                        orderIndex = index
                     )
                 )
             }
@@ -85,7 +89,7 @@ internal class DatabaseRepositoryImpl(
             values.keys.forEach { type ->
                 values[type]?.forEach { value ->
                     val newValue = List(headersSize) {
-                        value.getOrElse(it) {""}
+                        value.getOrElse(it) { "" }
                     }
                     add(
                         ValueEntity(
@@ -153,7 +157,8 @@ internal class DatabaseRepositoryImpl(
         val currentIndex = allTypes.indexOf(type)
         val typesBeforeCurrent = allTypes.subList(0, currentIndex)
 
-        val typesAfterCurrent = allTypes.subListExclusiveToInclusive(currentIndex, allTypes.lastIndex)
+        val typesAfterCurrent =
+            allTypes.subListExclusiveToInclusive(currentIndex, allTypes.lastIndex)
         val allValues = database.valueDao().getAllByTableName(tableName).toMutableList()
 
         val valuesBeforeCurrentType = allValues.filter { typesBeforeCurrent.contains(it.type) }
@@ -166,7 +171,8 @@ internal class DatabaseRepositoryImpl(
             .sumOf { it.size } + headersByTableName.value.size
         /*Новое значение*/
         val newItem = MutableList(size) { "" }
-        newItem[0] = ((valuesByType.lastOrNull()?.get(0)?.toInt() ?: valuesBeforeCurrentType.size) + 1).toString()
+        newItem[0] = ((valuesByType.lastOrNull()?.get(0)?.toInt()
+            ?: valuesBeforeCurrentType.size) + 1).toString()
         newItem[1] = ((valuesByType.lastOrNull()?.get(1)?.toInt() ?: 0) + 1).toString()
         allValues.add(
             ValueEntity(
@@ -190,19 +196,19 @@ internal class DatabaseRepositoryImpl(
 
     override suspend fun getTableInfoFlow(name: String): Flow<FileParsingResultDTO?> {
         return if (database.databaseIsNotEmpty()) {
-            database.headerDao().getHeaderWithValuesFlow(name).map {
-                val values = it?.values
-                    ?.sortedBy { it.values[0].toInt() }
-                    ?.groupBy {
+            getHeadersWithValuesFlow(name).map {
+                val values = it.values
+                    .sortedBy { it.values[0].toInt() }
+                    .groupBy {
                         it.type
                     }
-                    ?.map {
+                    .map {
                         it.key to it.value.map { it.values }
                     }
-                    ?.toMap()
+                    .toMap()
                 FileParsingResultDTO(
-                    headers = it?.header?.value!!,
-                    values = values!!,
+                    headers = it.header.value,
+                    values = values,
                     tableName = name,
                     valueTypes = it.valuesTypes.map { it.name }
                 )
@@ -236,9 +242,12 @@ internal class DatabaseRepositoryImpl(
         val allByType = database.valueDao().getAllByTypeAndTableName(type, tableName)
         val currentValue = allByType[rowIndex]
         val mutableValues = currentValue.values.toMutableList()
-        val xIndex = findPositionInDefaultHeaders("X").firstOrNull() ?: error("header \"X\" not found")
-        val yIndex = findPositionInDefaultHeaders("Y").firstOrNull() ?: error("header \"Y\" not found")
-        val nameIndex = findPositionInDefaultHeaders("Название").firstOrNull() ?: error("header \"Название\" not found")
+        val xIndex =
+            findPositionInDefaultHeaders("X").firstOrNull() ?: error("header \"X\" not found")
+        val yIndex =
+            findPositionInDefaultHeaders("Y").firstOrNull() ?: error("header \"Y\" not found")
+        val nameIndex = findPositionInDefaultHeaders("Название").firstOrNull()
+            ?: error("header \"Название\" not found")
         mutableValues[xIndex] = position.x.toString()
         mutableValues[yIndex] = position.y.toString()
         mutableValues[nameIndex] = position.name
@@ -264,11 +273,11 @@ internal class DatabaseRepositoryImpl(
         return if (database.databaseIsNotEmpty()) {
             /*Получаем хедер (пока там может быть только один)*/
             val headers = database.headerDao().getAll().first()
-            val headersWithValues = database.headerDao().getHeaderWithValues(headers.name)
-            val valuesCategories = headersWithValues?.values?.map { it.type }?.toSet()
+            val headersWithValues = getHeadersWithValues(headers.name)
+            val valuesCategories = headersWithValues.values.map { it.type }.toSet()
             println("valuesCategories = $valuesCategories")
             val values = buildMap<String, List<List<String>>> {
-                valuesCategories?.forEach { category ->
+                valuesCategories.forEach { category ->
                     put(
                         category,
                         headersWithValues.values.filter { it.type == category }
@@ -276,7 +285,7 @@ internal class DatabaseRepositoryImpl(
                 }
             }
             FileParsingResultDTO(
-                headers = headersWithValues?.header?.value!!,
+                headers = headersWithValues.header.value,
                 values = values,
                 tableName = headersWithValues.header.name,
                 valueTypes = headersWithValues.valuesTypes.map { it.name }
@@ -309,6 +318,27 @@ internal class DatabaseRepositoryImpl(
                     values = modifiedValue
                 )
             }
+    }
 
+    fun getHeadersWithValuesFlow(name: String): Flow<HeadersWithValues> {
+        return combine(
+            database.headerDao().getByTableNameFlow(name),
+            database.valueDao().getAllByTableNameFlow(name),
+            database.valuesTypeDao().getAllByTableNameFlow(name)
+        ) { header, value, valueType ->
+            HeadersWithValues(
+                header = header,
+                values = value,
+                valuesTypes = valueType
+            )
+        }
+    }
+
+    @Transaction
+    suspend fun getHeadersWithValues(name: String): HeadersWithValues {
+        val header = database.headerDao().getByTableName(name)
+        val values = database.valueDao().getAllByTableName(name)
+        val valuesTypes = database.valuesTypeDao().getAllByTableName(name)
+        return HeadersWithValues(header, values, valuesTypes)
     }
 }
