@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -30,6 +32,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
@@ -44,6 +48,7 @@ import ru.maplyb.unitmanagerlib.gui.impl.presentation.home.HomeScreen
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.home.components.CreateTableDialog
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreen
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenAction
+import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenEffect
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenUIState
 import ru.maplyb.unitmanagerlib.gui.impl.presentation.table.MainScreenViewModel
 import ru.maplyb.unitmanagerlib.parser.impl.parseLines
@@ -65,7 +70,7 @@ internal class UnitManagerImpl: UnitManager {
 
     @Composable
     override fun TableHandler() {
-        var tableName by remember {
+        var tableName by rememberSaveable {
             mutableStateOf<String?>(null)
         }
         val scope = rememberCoroutineScope()
@@ -198,6 +203,7 @@ internal class UnitManagerImpl: UnitManager {
             factory = MainScreenViewModel.create(repository)
         )[MainScreenViewModel::class.java]
         val state by viewModel.state.collectAsState()
+        val context = LocalContext.current
         DisposableEffect(Unit) {
             onDispose {
                 mainViewModelStore.clear()
@@ -205,6 +211,19 @@ internal class UnitManagerImpl: UnitManager {
         }
         LaunchedEffect(tableName) {
             viewModel.onAction(MainScreenAction.SetTableName(tableName))
+        }
+        LaunchedEffect(Unit) {
+            viewModel
+                .effect
+                .onEach {
+                    when(it) {
+                        is MainScreenEffect.ShowMessage -> {
+                            Toast.makeText(context, it.message, Toast.LENGTH_LONG).show()
+                        }
+                    }
+
+                }
+                .launchIn(this)
         }
         if (state.fileInfo != null) {
             ShowImpl(state) { action ->

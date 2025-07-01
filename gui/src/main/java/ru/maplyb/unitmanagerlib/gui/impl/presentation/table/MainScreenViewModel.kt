@@ -1,15 +1,15 @@
 package ru.maplyb.unitmanagerlib.gui.impl.presentation.table
 
-import android.app.Activity
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
@@ -55,6 +55,10 @@ internal data class MainScreenUIState(
     }
 }
 
+internal sealed interface MainScreenEffect {
+    data class ShowMessage(val message: String) : MainScreenEffect
+}
+
 internal sealed interface MainScreenState {
     sealed interface Select : MainScreenState {
         class Initial : Select
@@ -72,6 +76,15 @@ internal class MainScreenViewModel private constructor(
 
     private val _state = MutableStateFlow(MainScreenUIState.default)
     val state = _state.asStateFlow()
+
+    private val _effect = Channel<MainScreenEffect>(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
+
+    fun onEffect(effect: MainScreenEffect) {
+        viewModelScope.launch {
+            _effect.send(effect)
+        }
+    }
 
     init {
         repository
@@ -139,6 +152,22 @@ internal class MainScreenViewModel private constructor(
             }
 
             is MainScreenAction.UpdateState -> {
+                when (action.state) {
+                    is MainScreenState.Select.DeleteDialog,
+                    is MainScreenState.Select.MoveDialog,
+                    is MainScreenState.Select.SelectPosition -> {
+                        if (_state.value.selectedMap.isEmpty()) {
+                            onEffect(
+                                MainScreenEffect.ShowMessage(
+                                    message = "Сначала выберите записи"
+                                )
+                            )
+                            return
+                        }
+                    }
+                    MainScreenState.Initial -> Unit
+                    is MainScreenState.Select.Initial -> Unit
+                }
                 _state.update {
                     it.copy(
                         state = action.state,
