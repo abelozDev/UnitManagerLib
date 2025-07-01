@@ -30,7 +30,9 @@ interface DatabaseRepository {
         type: String,
         rowIndex: Int,
     )
+    @Deprecated("use local positions")
     suspend fun insertPositions(positions: List<PositionDTO>)
+    @Deprecated("use local positions")
     fun positionsFlow(): Flow<List<PositionDTO>>
     fun getAllTablesNames(): Flow<List<String>>
     suspend fun deleteTable(tableName: String)

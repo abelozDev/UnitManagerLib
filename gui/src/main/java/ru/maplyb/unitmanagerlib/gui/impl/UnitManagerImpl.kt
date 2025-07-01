@@ -32,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -63,7 +64,7 @@ internal class UnitManagerImpl: UnitManager {
     private var activity: Context? = null
     private lateinit var repository: DatabaseRepository
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val positions = MutableStateFlow<List<Position>>(emptyList())
 
     override fun setShowOnMapClickListener(listener: ShowOnMapClickListener) {
         showOnMapClickListener = listener
@@ -155,10 +156,9 @@ internal class UnitManagerImpl: UnitManager {
         }
     }
 
+
     override fun updatePositions(positions: List<Position>) {
-        scope.launch {
-            repository.insertPositions(positions.map { it.toDTO() })
-        }
+        this.positions.value = positions
     }
 
     @Composable
@@ -214,6 +214,13 @@ internal class UnitManagerImpl: UnitManager {
             onDispose {
                 mainViewModelStore.clear()
             }
+        }
+        LaunchedEffect(Unit) {
+            positions
+                .onEach {
+                    viewModel.onAction(MainScreenAction.SetPositions(it))
+                }
+                .launchIn(this)
         }
         LaunchedEffect(tableName) {
             viewModel.onAction(MainScreenAction.SetTableName(tableName))

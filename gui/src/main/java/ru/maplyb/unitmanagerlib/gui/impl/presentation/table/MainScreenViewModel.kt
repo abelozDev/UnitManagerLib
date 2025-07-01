@@ -41,6 +41,8 @@ internal sealed interface MainScreenAction {
         val type: String,
         val index: Int
     ) : MainScreenAction
+
+    data class SetPositions(val positions: List<Position>): MainScreenAction
 }
 
 internal data class MainScreenUIState(
@@ -91,22 +93,6 @@ internal class MainScreenViewModel private constructor(
         viewModelScope.launch {
             _effect.send(effect)
         }
-    }
-
-    init {
-        repository
-            .positionsFlow()
-            .onEach { list ->
-                val mapped = list.map {
-                    it.toUI()
-                }
-                _state.update {
-                    it.copy(
-                        positions = mapped
-                    )
-                }
-            }
-            .launchIn(viewModelScope)
     }
 
     fun onAction(action: MainScreenAction) {
@@ -227,6 +213,14 @@ internal class MainScreenViewModel private constructor(
                     )
                 }
 
+            }
+
+            is MainScreenAction.SetPositions -> {
+                _state.update {
+                    it.copy(
+                        positions = action.positions
+                    )
+                }
             }
         }
     }

@@ -85,6 +85,7 @@ private fun PositionItem(position: Position, onClick: () -> Unit) {
             }
             .padding(vertical = 4.dp),
         fontSize = 16.sp,
+        color = PrintMapColorSchema.colors.textColor,
         text = "${position.name}(${position.x}, ${position.y})"
     )
 }
