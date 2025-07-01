@@ -1,5 +1,6 @@
 package ru.maplyb.unitmanagerlib.gui.impl.presentation.table
 
+import android.content.Context
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.findPositionInDefaultHeaders
+import ru.maplyb.unitmanagerlib.common.database.data_store.PreferencesDataSource
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.core.util.types.RowIndex
 import ru.maplyb.unitmanagerlib.gui.api.model.Position
@@ -28,7 +30,7 @@ internal sealed interface MainScreenAction {
     data class MoveItems(val type: String) : MainScreenAction
     data class AddItem(val type: String) : MainScreenAction
     data class UpdateState(val state: MainScreenState) : MainScreenAction
-    data class SetTableName(val tableName: String) : MainScreenAction
+    data class SetTableName(val context: Context, val tableName: String) : MainScreenAction
     data class UpdatePosition(val positionUI: Position) : MainScreenAction
     data class UpdateValues(
         val type: String,
@@ -172,6 +174,7 @@ internal class MainScreenViewModel private constructor(
             }
 
             is MainScreenAction.SetTableName -> {
+                setLastTableName(action.context, action.tableName)
                 _state.update {
                     it.copy(
                         tableName = action.tableName
@@ -223,6 +226,10 @@ internal class MainScreenViewModel private constructor(
                 }
             }
         }
+    }
+
+    private fun setLastTableName(context: Context, tableName: String) = viewModelScope.launch {
+        repository.setLastTable(context, tableName)
     }
 
     private fun getPosition(

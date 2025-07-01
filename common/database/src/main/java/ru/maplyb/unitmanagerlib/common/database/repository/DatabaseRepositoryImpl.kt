@@ -1,5 +1,6 @@
 package ru.maplyb.unitmanagerlib.common.database.repository
 
+import android.content.Context
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -10,6 +11,7 @@ import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultU
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.defaultUnitManagerValueTypes
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.findPositionInDefaultHeaders
 import ru.maplyb.unitmanagerlib.common.database.dao.HeaderDao.Companion.headersSize
+import ru.maplyb.unitmanagerlib.common.database.data_store.PreferencesDataSource
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.common.database.domain.model.FileParsingResultDTO
 import ru.maplyb.unitmanagerlib.common.database.domain.model.PositionDTO
@@ -21,7 +23,8 @@ import ru.maplyb.unitmanagerlib.common.database.entity.ValuesTypeEntity
 import ru.maplyb.unitmanagerlib.core.util.subListExclusiveToInclusive
 
 internal class DatabaseRepositoryImpl(
-    private val database: UnitManagerDatabase
+    private val database: UnitManagerDatabase,
+    private val preferencesDataSource: PreferencesDataSource
 ) : DatabaseRepository {
 
     override fun getAllTablesNames(): Flow<List<String>> {
@@ -56,6 +59,25 @@ internal class DatabaseRepositoryImpl(
         )
         database.headerDao().insert(entity)
         database.valuesTypeDao().insertTypes(valueTypesList)
+    }
+
+    override suspend fun setLastTable(context: Context, tableName: String) {
+        preferencesDataSource.setLastTable(context, tableName)
+    }
+
+    override suspend fun getLastTable(context: Context): String? {
+        val lastTable = preferencesDataSource.getLastTable(context)
+        val allTables = database.headerDao().getAll()
+        return if (allTables.map { it.name }.contains(lastTable)) {
+            lastTable
+        } else {
+            preferencesDataSource.removeLastTable(context)
+            null
+        }
+    }
+
+    override suspend fun removeLastTable(context: Context) {
+        preferencesDataSource.removeLastTable(context)
     }
 
     @Transaction

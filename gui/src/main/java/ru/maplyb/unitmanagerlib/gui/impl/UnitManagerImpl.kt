@@ -11,6 +11,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.collection.buildLongList
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import ru.maplyb.unitmanagerlib.common.database.Database
+import ru.maplyb.unitmanagerlib.common.database.data_store.PreferencesDataSource
 import ru.maplyb.unitmanagerlib.common.database.domain.DatabaseRepository
 import ru.maplyb.unitmanagerlib.core.ui_kit.LocalColorScheme
 import ru.maplyb.unitmanagerlib.core.ui_kit.darkColorSchema
@@ -63,7 +65,8 @@ internal class UnitManagerImpl: UnitManager {
 
     private var activity: Context? = null
     private lateinit var repository: DatabaseRepository
-
+    private var _tableName = MutableStateFlow<String?>(null)
+    val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val positions = MutableStateFlow<List<Position>>(emptyList())
 
     override fun setShowOnMapClickListener(listener: ShowOnMapClickListener) {
@@ -71,14 +74,20 @@ internal class UnitManagerImpl: UnitManager {
     }
     override fun init(activity: Activity) {
         this.activity = activity.applicationContext
-        repository = DatabaseRepository.create(Database.provideDatabase(activity))
+        repository = DatabaseRepository.create(
+            Database.provideDatabase(activity),
+            PreferencesDataSource.create()
+        )
+        scope.launch {
+            _tableName.value = repository.getLastTable(activity)
+        }
     }
 
 
     @Composable
     override fun TableHandler() {
         var tableName by rememberSaveable {
-            mutableStateOf<String?>(null)
+            mutableStateOf<String?>(_tableName.value)
         }
         val scope = rememberCoroutineScope()
         var launchSelector by remember {
@@ -90,7 +99,10 @@ internal class UnitManagerImpl: UnitManager {
         val allTablesNames by repository.getAllTablesNames().collectAsState(emptyList())
         BackHandler {
             if (tableName != null) {
-                tableName = null
+                scope.launch {
+                    tableName = null
+                    repository.removeLastTable(activity!!)
+                }
             }
         }
         if (launchSelector) {
@@ -138,7 +150,9 @@ internal class UnitManagerImpl: UnitManager {
                     }
                 )
             } else {
-                tableName?.let { Show(it) }
+                tableName.let {
+                    Show(it!!)
+                }
             }
             if (showCreateDialog) {
                 CreateTableDialog(
@@ -223,7 +237,7 @@ internal class UnitManagerImpl: UnitManager {
                 .launchIn(this)
         }
         LaunchedEffect(tableName) {
-            viewModel.onAction(MainScreenAction.SetTableName(tableName))
+            viewModel.onAction(MainScreenAction.SetTableName(context, tableName))
         }
         LaunchedEffect(Unit) {
             viewModel
