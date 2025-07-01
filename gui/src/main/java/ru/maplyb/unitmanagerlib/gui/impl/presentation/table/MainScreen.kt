@@ -75,6 +75,7 @@ internal fun MainScreen(
     deleteItems: (List<List<String>>) -> Unit,
     onAction: (MainScreenAction) -> Unit,
     showOnMap: (String, Int) -> Unit,
+    back: () -> Unit,
 ) {
 
     NavigationTabExample(
@@ -86,6 +87,7 @@ internal fun MainScreen(
         deleteItems = deleteItems,
         onAction = onAction,
         showOnMap = showOnMap,
+        back = back
     )
 }
 
@@ -99,6 +101,7 @@ internal fun NavigationTabExample(
     addItem: (type: String) -> Unit,
     deleteItems: (List<List<String>>) -> Unit,
     showOnMap: (String, Int) -> Unit,
+    back: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     require(uiState.fileInfo != null) {
@@ -113,7 +116,6 @@ internal fun NavigationTabExample(
             )
         )
     }
-    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     Scaffold(modifier = modifier.background(PrintMapColorSchema.colors.backgroundColor)) { contentPadding ->
         Column(
@@ -131,7 +133,7 @@ internal fun NavigationTabExample(
                         )
                     },
                     onClick = {
-                        backDispatcher?.onBackPressed()
+                        back()
                     }
                 )
                 IconButton(

@@ -45,6 +45,7 @@ internal sealed interface MainScreenAction {
     ) : MainScreenAction
 
     data class SetPositions(val positions: List<Position>): MainScreenAction
+    data class Back(val context: Context): MainScreenAction
 }
 
 internal data class MainScreenUIState(
@@ -68,6 +69,7 @@ internal data class MainScreenUIState(
 internal sealed interface MainScreenEffect {
     data class ShowMessage(val message: String) : MainScreenEffect
     data class ShowOnMap(val position: Position) : MainScreenEffect
+    class Back(): MainScreenEffect
 }
 
 internal sealed interface MainScreenState {
@@ -223,6 +225,13 @@ internal class MainScreenViewModel private constructor(
                     it.copy(
                         positions = action.positions
                     )
+                }
+            }
+
+            is MainScreenAction.Back -> {
+                viewModelScope.launch {
+                    repository.removeLastTable(action.context)
+                    onEffect(MainScreenEffect.Back())
                 }
             }
         }

@@ -59,7 +59,7 @@ import ru.maplyb.unitmanagerlib.parser.impl.parseLines
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-internal class UnitManagerImpl: UnitManager {
+internal class UnitManagerImpl : UnitManager {
 
     private var showOnMapClickListener: ShowOnMapClickListener? = null
 
@@ -72,6 +72,7 @@ internal class UnitManagerImpl: UnitManager {
     override fun setShowOnMapClickListener(listener: ShowOnMapClickListener) {
         showOnMapClickListener = listener
     }
+
     override fun init(activity: Activity) {
         this.activity = activity.applicationContext
         repository = DatabaseRepository.create(
@@ -151,7 +152,9 @@ internal class UnitManagerImpl: UnitManager {
                 )
             } else {
                 tableName.let {
-                    Show(it!!)
+                    Show(it!!) {
+                        tableName = null
+                    }
                 }
             }
             if (showCreateDialog) {
@@ -210,7 +213,10 @@ internal class UnitManagerImpl: UnitManager {
     }
 
     @Composable
-    private fun Show(tableName: String) {
+    private fun Show(
+        tableName: String,
+        back: () -> Unit
+    ) {
         val mainViewModelStore = remember { ViewModelStore() }
         val mainViewModelStoreOwner = remember {
             object : ViewModelStoreOwner {
@@ -243,7 +249,7 @@ internal class UnitManagerImpl: UnitManager {
             viewModel
                 .effect
                 .onEach {
-                    when(it) {
+                    when (it) {
                         is MainScreenEffect.ShowMessage -> {
                             Toast.makeText(context, it.message, Toast.LENGTH_LONG).show()
                         }
@@ -251,15 +257,25 @@ internal class UnitManagerImpl: UnitManager {
                         is MainScreenEffect.ShowOnMap -> {
                             showOnMapClickListener?.onClick(it.position)
                         }
+
+                        is MainScreenEffect.Back -> {
+                            back()
+                        }
                     }
 
                 }
                 .launchIn(this)
         }
         if (state.fileInfo != null) {
-            ShowImpl(state) { action ->
-                viewModel.onAction(action)
-            }
+            ShowImpl(
+                uiState = state,
+                onAction = { action ->
+                    viewModel.onAction(action)
+                },
+                onEffect = {
+                    viewModel.onEffect(it)
+                }
+            )
         }
     }
 
@@ -278,11 +294,13 @@ internal class UnitManagerImpl: UnitManager {
     @Composable
     private fun ShowImpl(
         uiState: MainScreenUIState,
-        onAction: (MainScreenAction) -> Unit
+        onAction: (MainScreenAction) -> Unit,
+        onEffect: (MainScreenEffect) -> Unit
     ) {
         require(uiState.fileInfo != null) {
             "file info must not be null"
         }
+        val context = LocalContext.current
         var sharedData by remember {
             mutableStateOf<List<String>>(emptyList())
         }
@@ -315,6 +333,9 @@ internal class UnitManagerImpl: UnitManager {
             },
             showOnMap = { type, index ->
                 onAction(MainScreenAction.ShowOnMapClick(type, index))
+            },
+            back = {
+                onAction(MainScreenAction.Back(context))
             }
         )
     }

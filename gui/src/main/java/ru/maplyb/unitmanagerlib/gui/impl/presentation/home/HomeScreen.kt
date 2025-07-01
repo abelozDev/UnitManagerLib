@@ -161,18 +161,6 @@ internal fun HomeScreen(
                 }
             )
         }
-
-
-        /*Button(
-            modifier = Modifier.align(Alignment.BottomCenter),
-            onClick = {
-                openNew()
-            },
-            colors = unitManagerButtonColors(),
-            content = {
-                Text("Открыть новый файл")
-            }
-        )*/
     }
 }
 
