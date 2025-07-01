@@ -18,7 +18,7 @@ navigation-compose = "2.5.3"
 room = "2.7.1"
 kotlinx-serialization = "1.8.0"
 gson = "2.13.1"
-lib-version = "0.0.4"
+lib-version = "0.0.4-alpha1"
 datastore = "1.1.2"
 [libraries]
 datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore"}
