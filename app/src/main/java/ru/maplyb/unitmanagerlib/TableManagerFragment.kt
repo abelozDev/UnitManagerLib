@@ -17,23 +17,23 @@ class TableManagerFragment : Fragment(R.layout.table_manager_fragment) {
         val unitManager = (activity as UnitManagerProvider).provideUnitManager()
         val list = listOf(
             Position(
-                x = 1.0,
-                y = 0.0,
+                x = 1,
+                y = 0,
                 name = "test1"
             ),
             Position(
-                x = 2.0,
-                y = 0.0,
+                x = 2,
+                y = 0,
                 name = "test2"
             ),
             Position(
-                x = 3.0,
-                y = 0.0,
+                x = 3,
+                y = 0,
                 name = "test3"
             ),
             Position(
-                x = 4.0,
-                y = 0.0,
+                x = 4,
+                y = 0,
                 name = "test4"
             ),
         )

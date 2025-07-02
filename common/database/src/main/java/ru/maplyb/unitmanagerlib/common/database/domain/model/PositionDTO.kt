@@ -3,8 +3,8 @@ package ru.maplyb.unitmanagerlib.common.database.domain.model
 import ru.maplyb.unitmanagerlib.common.database.entity.PositionEntity
 
 data class PositionDTO(
-    val x: Double,
-    val y: Double,
+    val x: Int,
+    val y: Int,
     val name: String
 ) {
     fun toEntity(): PositionEntity = PositionEntity(x = x, y = y, name = name)

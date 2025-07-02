@@ -1,7 +1,7 @@
 package ru.maplyb.unitmanagerlib.gui.api.model
 
 data class Position(
-    val x: Double,
-    val y: Double,
+    val x: Int,
+    val y: Int,
     val name: String
 )

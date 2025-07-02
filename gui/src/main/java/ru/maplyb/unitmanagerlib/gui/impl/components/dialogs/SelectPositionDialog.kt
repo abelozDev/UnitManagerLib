@@ -95,8 +95,8 @@ private fun PositionItem(position: Position, onClick: () -> Unit) {
 private fun PreviewSelectPositionDialog() {
     val positionsList = List(10) {
         Position(
-            x = 0.0,
-            y = 0.0,
+            x = 0,
+            y = 0,
             name = "test"
         )
     }

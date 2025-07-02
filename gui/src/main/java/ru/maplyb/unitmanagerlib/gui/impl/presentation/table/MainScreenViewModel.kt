@@ -262,7 +262,7 @@ internal class MainScreenViewModel private constructor(
                 item[it]
             }
             ?: error("header \"Название\" not found")
-        return Position(x.toDoubleOrNull() ?: 0.0, y.toDoubleOrNull() ?: 0.0, name)
+        return Position(x.toIntOrNull() ?: 0, y.toIntOrNull() ?: 0, name)
     }
 
     private fun setPosition(
